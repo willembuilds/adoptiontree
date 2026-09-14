@@ -1,0 +1,12 @@
+.DS_Store
+.claude/settings.local.json
+
+# nothing under private/ is part of the site; the PDF lives in Supabase Storage
+private/
+.qa/
+.env
+node_modules/
+
+# source decks and generated presentations are not part of the site
+*.pptx
+output/
