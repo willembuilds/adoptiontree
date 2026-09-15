@@ -376,60 +376,126 @@
     });
   });
 
-  /* Save the request before issuing access to the white paper. */
+  /* White paper funnel: attribution capture, work-email policy, consent, emailed access. */
   var form = document.getElementById("whitepaperForm");
   var status = document.getElementById("form-status");
   var success = document.getElementById("download-success");
-  var downloadLink = document.getElementById("download-link");
-  if (form) form.addEventListener("submit", async function (event) {
-    event.preventDefault();
-    if (!form.reportValidity()) return;
-    var submit = form.querySelector('[type="submit"]');
-    if (submit.disabled) return;
-    submit.disabled = true;
-    submit.textContent = "Preparing your copy…";
-    status.classList.remove("is-error");
-    status.textContent = "";
-    var controller = new AbortController();
-    var timeout = setTimeout(function () { controller.abort(); }, 15000);
-    try {
-      var response = await fetch(form.action, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify(Object.fromEntries(new FormData(form))),
-        signal: controller.signal
-      });
-      var result;
-      try { result = await response.json(); } catch (_) {
-        throw new Error("Download access is unavailable. Please try again in a moment.");
-      }
-      if (!response.ok) throw new Error(result.error || "Please try again in a moment.");
-      if (typeof result.downloadUrl !== "string" || !/^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/sign\//.test(result.downloadUrl)) {
-        throw new Error("We could not prepare your download. Please try again.");
-      }
-      downloadLink.href = result.downloadUrl;
-      form.hidden = true;
-      success.hidden = false;
-      success.focus();
-      form.reset();
-    } catch (error) {
-      status.classList.add("is-error");
-      status.textContent = error.name === "AbortError" ? "That took too long. Please try again." : error.message;
-    } finally {
-      clearTimeout(timeout);
-      submit.disabled = false;
-      submit.innerHTML = 'Get the white paper <span aria-hidden="true">↓</span>';
+  var emailInput = document.getElementById("email");
+  var ATTRIBUTION_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
+  var WORK_EMAIL_MESSAGE = "Please use your work email address to access the full whitepaper.";
+  var policyPromise = null;
+
+  function captureAttribution() {
+    var stored = {};
+    try { stored = JSON.parse(sessionStorage.getItem("wp_attribution") || "{}"); } catch (_) { stored = {}; }
+    var params = new URLSearchParams(location.search);
+    var fresh = {};
+    ATTRIBUTION_KEYS.forEach(function (k) { var v = params.get(k); if (v) fresh[k] = v.slice(0, 200); });
+    if (Object.keys(fresh).length || !stored.landing_url) {
+      fresh.referrer = (document.referrer || "").slice(0, 500);
+      var utmOnly = new URLSearchParams();
+      ATTRIBUTION_KEYS.forEach(function (k) { if (fresh[k]) utmOnly.set(k, fresh[k]); });
+      fresh.landing_url = (location.origin + location.pathname + (utmOnly.toString() ? "?" + utmOnly.toString() : "")).slice(0, 500);
+      stored = Object.assign({}, stored, fresh);
+      try { sessionStorage.setItem("wp_attribution", JSON.stringify(stored)); } catch (_) {}
     }
-  });
-  var again = document.getElementById("request-again");
-  if (again) again.addEventListener("click", function () {
-    success.hidden = true; form.hidden = false;
-    downloadLink.href = "#whitepaper";
-    document.getElementById("email").focus();
-  });
-  document.querySelectorAll('a[href="#privacy"]').forEach(function (a) {
-    a.addEventListener("click", function () { document.getElementById("privacy").open = true; });
-  });
+    return stored;
+  }
+  function showStatus(message, isError) { if (!status) return; status.classList.toggle("is-error", !!isError); status.textContent = message; }
+  function showSuccess() { form.hidden = true; success.hidden = false; success.focus(); }
+  function loadPolicy() {
+    if (!policyPromise) {
+      var timeout = typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined;
+      policyPromise = fetch(form.action.replace(/\/$/, "") + "/policy", { credentials: "omit", signal: timeout })
+        .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+        .then(function (policy) { if (!policy) policyPromise = null; return policy; });
+    }
+    return policyPromise;
+  }
+  function blockedDomain(policy, email) {
+    if (!policy) return false;
+    var domain = (email.split("@")[1] || "").toLowerCase();
+    if (!domain) return false;
+    return (policy.free || []).concat(policy.disposable || []).some(function (d) {
+      d = d.toLowerCase();
+      return domain === d || domain.slice(-(d.length + 1)) === "." + d;
+    });
+  }
+
+  if (form) {
+    var attribution = captureAttribution();
+    ATTRIBUTION_KEYS.concat(["referrer", "landing_url"]).forEach(function (k) {
+      var el = form.querySelector('input[name="' + k + '"]');
+      if (el && attribution[k]) el.value = attribution[k];
+    });
+    var returned = new URLSearchParams(location.search);
+    if (returned.get("sent") === "1") showSuccess();
+    else if (returned.get("access") === "expired") showStatus("That access link has expired. Use the form above to request a new one.", true);
+    else if (returned.get("access") === "unavailable") showStatus("The download is temporarily unavailable. Please try again shortly.", true);
+    else if (returned.get("unsubscribed") === "1") showStatus("You are unsubscribed. We will not contact you further.", false);
+    else if (returned.get("unsubscribed") === "0") showStatus("That unsubscribe link is not valid. Email willem@adoptiontree.ai and we will remove you.", true);
+    else if (returned.get("unsubscribed") === "unavailable") showStatus("We could not process the unsubscribe right now. Please try again later, or email willem@adoptiontree.ai.", true);
+
+    emailInput.addEventListener("focus", function () { loadPolicy(); }, { once: true });
+    emailInput.addEventListener("input", function () { emailInput.setCustomValidity(""); });
+    emailInput.addEventListener("blur", function () {
+      loadPolicy().then(function (policy) {
+        if (emailInput.value && blockedDomain(policy, emailInput.value.trim())) {
+          emailInput.setCustomValidity(WORK_EMAIL_MESSAGE);
+          showStatus(WORK_EMAIL_MESSAGE, true);
+        }
+      });
+    });
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      var policy = await loadPolicy();
+      emailInput.setCustomValidity(blockedDomain(policy, emailInput.value.trim()) ? WORK_EMAIL_MESSAGE : "");
+      if (!form.reportValidity()) {
+        if (emailInput.validationMessage === WORK_EMAIL_MESSAGE) showStatus(WORK_EMAIL_MESSAGE, true);
+        return;
+      }
+      var submit = form.querySelector('[type="submit"]');
+      if (form.dataset.busy) return;
+      form.dataset.busy = "1";
+      submit.setAttribute("aria-busy", "true");
+      submit.textContent = "Sending your access…";
+      showStatus("", false);
+      var controller = new AbortController();
+      var timeout = setTimeout(function () { controller.abort(); }, 20000);
+      try {
+        var data = Object.fromEntries(new FormData(form));
+        data.consent = document.getElementById("consent").checked;
+        var response = await fetch(form.action, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify(data),
+          signal: controller.signal
+        });
+        var result;
+        try { result = await response.json(); } catch (_) {
+          throw new Error("Access is unavailable right now. Please try again in a moment.");
+        }
+        if (!response.ok) throw new Error(result.error || "Please try again in a moment.");
+        showSuccess();
+      } catch (error) {
+        var message = error.name === "AbortError" ? "That took too long. Please try again." : (response ? error.message : "Access is unavailable right now. Please try again in a moment.");
+        showStatus(message, true);
+        var field = response && response.status === 400 ? (/first name/i.test(error.message) ? document.getElementById("first_name") : emailInput) : submit;
+        if (field) field.focus();
+      } finally {
+        clearTimeout(timeout);
+        delete form.dataset.busy;
+        submit.removeAttribute("aria-busy");
+        submit.innerHTML = 'Get the whitepaper <span aria-hidden="true">→</span>';
+      }
+    });
+    var again = document.getElementById("request-again");
+    if (again) again.addEventListener("click", function () {
+      success.hidden = true; form.hidden = false; showStatus("", false);
+      document.getElementById("first_name").focus();
+    });
+  }
 
   /* ---------- active nav link ---------- */
   var sections = document.querySelectorAll("section[id]");
