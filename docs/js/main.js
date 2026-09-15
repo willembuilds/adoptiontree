@@ -1,4 +1,4 @@
-/* Adoption Tree Model interactions */
+/* Adoption Tree™ Model interactions */
 (function () {
   "use strict";
   document.documentElement.classList.replace("no-js", "js");

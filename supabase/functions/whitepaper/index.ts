@@ -1,4 +1,4 @@
-// White paper funnel for the Adoption Tree Model site.
+// White paper funnel for the Adoption Tree™ Model site.
 //   POST /            request access: first name, work email, consent. Stores the lead, emails a personal link.
 //   GET  /access      redeems an emailed link (7 days) for a short signed Storage URL and redirects to the PDF.
 //   GET  /unsubscribe sends the reader to the confirmation page on the site; POST (from that page, or RFC 8058
@@ -35,7 +35,7 @@ const DEFAULT_ORIGINS = [
   "http://localhost:4173",
 ];
 const SITE_URL = (Deno.env.get("SITE_URL") ?? "https://adoptiontree.ai").replace(/\/$/, "");
-const EMAIL_FROM = Deno.env.get("EMAIL_FROM") ?? "The Adoption Tree <willem@adoptiontree.ai>";
+const EMAIL_FROM = Deno.env.get("EMAIL_FROM") ?? "The Adoption Tree™ <willem@adoptiontree.ai>";
 const EMAIL_REPLY_TO = Deno.env.get("EMAIL_REPLY_TO") ?? "willem@adoptiontree.ai";
 
 function serviceKey(): string {
