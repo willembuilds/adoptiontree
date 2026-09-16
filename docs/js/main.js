@@ -385,21 +385,16 @@
   var WORK_EMAIL_MESSAGE = "Please use your work email address to access the full whitepaper.";
   var policyPromise = null;
 
+  // Campaign source is read from the address bar of this page at load; nothing is stored in the browser.
   function captureAttribution() {
-    var stored = {};
-    try { stored = JSON.parse(sessionStorage.getItem("wp_attribution") || "{}"); } catch (_) { stored = {}; }
     var params = new URLSearchParams(location.search);
     var fresh = {};
     ATTRIBUTION_KEYS.forEach(function (k) { var v = params.get(k); if (v) fresh[k] = v.slice(0, 200); });
-    if (Object.keys(fresh).length || !stored.landing_url) {
-      fresh.referrer = (document.referrer || "").slice(0, 500);
-      var utmOnly = new URLSearchParams();
-      ATTRIBUTION_KEYS.forEach(function (k) { if (fresh[k]) utmOnly.set(k, fresh[k]); });
-      fresh.landing_url = (location.origin + location.pathname + (utmOnly.toString() ? "?" + utmOnly.toString() : "")).slice(0, 500);
-      stored = Object.assign({}, stored, fresh);
-      try { sessionStorage.setItem("wp_attribution", JSON.stringify(stored)); } catch (_) {}
-    }
-    return stored;
+    fresh.referrer = (document.referrer || "").slice(0, 500);
+    var utmOnly = new URLSearchParams();
+    ATTRIBUTION_KEYS.forEach(function (k) { if (fresh[k]) utmOnly.set(k, fresh[k]); });
+    fresh.landing_url = (location.origin + location.pathname + (utmOnly.toString() ? "?" + utmOnly.toString() : "")).slice(0, 500);
+    return fresh;
   }
   function showStatus(message, isError) { if (!status) return; status.classList.toggle("is-error", !!isError); status.textContent = message; }
   function showSuccess() { form.hidden = true; success.hidden = false; success.focus(); }

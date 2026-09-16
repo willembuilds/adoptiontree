@@ -72,7 +72,7 @@ A free-mail or disposable address returns 400 with the work-email message; a val
 ## Privacy
 
 `privacy.html` describes in plain English what the form collects, why, who processes it (Supabase, Resend,
-GitHub Pages, Google Fonts), retention and how to unsubscribe. The consent text lives in the function
+GitHub Pages), retention and how to unsubscribe. The typefaces are served from the site itself and nothing is stored in the visitor's browser. The consent text lives in the function
 (CONSENT_TEXT, CONSENT_VERSION) and is stored with every lead. Both are written for review by privacy counsel
 and make no compliance claims.
 
@@ -104,13 +104,8 @@ Not legal advice; these are the open items counsel should confirm before launch.
 
 - Legal basis and wording of the consent text for B2B marketing contact (consent is recorded at submission;
   the address is only proven when the emailed link is opened, see `accessed_at`).
-- Resend (US) receives first name and email address for every access email: transfer mechanism and processor terms.
-- Google Fonts serves the typefaces from Google servers, which receive each visitor's IP address. Self-hosting
-  the two families removes this; it is a small change.
-- Session storage of campaign parameters, referrer and landing page is written on page load
-  (Telecommunicatiewet 11.7a: strictly-necessary exception or not).
-- Retention periods (24 months for leads, 90 days for v1 rows, 1 hour for hashed addresses) and the
-  controller identity and address on the privacy page.
+- Resend (US) receives first name and email address for every access email; Resend's data processing agreement is part of its terms, and the EU-US Data Privacy Framework is the transfer basis. Confirm, or move the sending domain to Resend's EU region.
+- Retention periods (24 months for leads, 90 days for v1 rows, 1 hour for hashed addresses).
 
 ## Content decisions
 
