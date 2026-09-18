@@ -2187,3 +2187,64 @@ html.no-js{scroll-behavior:auto}
 .thread p { margin: 0; font-family: var(--font-sans); font-size: clamp(1.05rem, 1.4vw, 1.22rem); line-height: 1.45; font-weight: 500; color: var(--ink); }
 @media (max-width: 640px) { .thread { grid-template-columns: 1fr; padding: 1rem 1.1rem; } .thread__index { grid-row: auto; } }
 
+/* ---------- tree: hover, tap or focus a use case to see what it feeds back into the roots ---------- */
+.t-ucbox rect, .t-fbox rect { transition: stroke 0.3s ease, fill 0.3s ease, stroke-width 0.3s ease, opacity 0.35s ease; }
+.t-uclabel, .t-flabel { transition: fill 0.3s ease, opacity 0.35s ease; }
+.tree__svg.is-flowing .t-ucbox:not(.is-source) > *,
+.tree__svg.is-flowing .t-fbox:not(.is-lit) > * { opacity: 0.4; }
+.t-ucbox.is-source rect { stroke: var(--orange); stroke-width: 2.2; fill: rgba(255, 92, 31, 0.16); }
+.t-ucbox.is-source .t-uclabel { fill: var(--orange); }
+.t-fbox.is-lit rect { stroke: var(--orange); stroke-width: 2; fill: rgba(255, 92, 31, 0.15); }
+.t-fbox.is-lit .t-flabel { fill: var(--bone); }
+.t-office.is-pulsing rect { animation: tOfficePulse 0.8s ease; }
+@keyframes tOfficePulse { 40% { fill: rgba(255, 92, 31, 0.3); } }
+
+.t-flow {
+  fill: none;
+  stroke: var(--orange);
+  stroke-width: 3;
+  stroke-linecap: butt;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  animation-name: tFlow;
+  animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  animation-fill-mode: forwards;
+  pointer-events: none;
+}
+.t-flow--halo { stroke: rgba(255, 92, 31, 0.22); stroke-width: 12; }
+.t-flow--rev { stroke-dashoffset: -1; animation-name: tFlowRev; }
+@keyframes tFlow { to { stroke-dashoffset: 0; } }
+@keyframes tFlowRev { to { stroke-dashoffset: 0; } }
+.t-ring {
+  fill: none;
+  stroke: var(--orange);
+  stroke-width: 2;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tRing 0.9s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes tRing { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.14, 1.45); } }
+.tree__svg.is-fading .t-flowlayer { opacity: 0; transition: opacity 0.5s ease; }
+
+.tree__readout { max-width: 34rem; margin: 1.4rem auto 0; min-height: 3rem; }
+.tree__readout-hint { margin: 0; text-align: center; font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.05em; line-height: 1.6; color: var(--grey); }
+.tree__readout-hint::before { content: "\2191\00a0"; color: var(--orange); }
+.tree__readout-body { border-left: 3px solid var(--orange); padding: 0.15rem 0 0.2rem 1rem; transition: opacity 0.5s ease; }
+.tree__readout.is-fading .tree__readout-body { opacity: 0; }
+.tree__readout-label { display: block; margin-bottom: 0.6rem; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--orange); }
+.tree__readout-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
+.tree__readout-list li { opacity: 0; transform: translateY(6px); transition: opacity 0.35s ease, transform 0.35s ease; font-size: 0.9rem; line-height: 1.35; color: var(--grey); }
+.tree__readout-list li.is-in { opacity: 1; transform: none; }
+.tree__readout-list strong { display: block; font-size: 0.95rem; font-weight: 600; color: var(--bone); }
+.tree__readout-note { display: block; margin-top: 0.7rem; font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--grey-2); }
+@media (min-width: 1200px) {
+  .tree__readout { position: absolute; left: 64.5%; top: 34%; width: 33%; margin: 0; max-width: none; }
+  .tree__readout-hint { text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-flow { animation: none; stroke-dashoffset: 0; }
+  .tree__readout-list li { transition: none; }
+}
+

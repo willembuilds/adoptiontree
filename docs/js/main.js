@@ -199,7 +199,9 @@
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
             treeStage.classList.add("is-grown");
+            grownAt = Date.now();
             tio.disconnect();
+            setTimeout(treeDemo, 3000);
             setTimeout(startSap, 3700);
           }
         });
@@ -284,22 +286,194 @@
     sapPulseFrom = pulse;
 
     (function loop() {
-      if (!document.hidden && !sapBusy && visibleTreeSvg() === svg) {
+      if (!document.hidden && !sapBusy && !flowSvg && Date.now() - lastTreeInteraction > 8000 && visibleTreeSvg() === svg) {
         pulse(Math.floor(Math.random() * branches.length));
       }
       setTimeout(loop, 4200);
     })();
+  }
 
-    // hover / tap a use case -> harvest flows from that branch
-    svg.querySelectorAll(".t-ucbox").forEach(function (g) {
-      var trigger = function () {
+  /* ---------- adoption tree: hover, tap or focus a use case to see what it feeds back into the roots ---------- */
+  // Illustrative: each use case leaves three things in the foundation. Indices follow the six foundation boxes
+  // in document order: 0 mandate, 1 data, 2 architecture, 3 responsible AI, 4 workforce, 5 measurement.
+  var TREE_FEEDS = [
+    [[1, "An approved, documented data source"], [3, "A control pattern the next release reuses"], [5, "A baseline and a first measured result"]],
+    [[0, "Decision rights tested at a real gate"], [2, "A reusable integration with the core system"], [4, "Trained users and an internal coach"]],
+    [[1, "Cleaned data the next team does not rebuild"], [4, "A changed workflow people actually use"], [5, "Time saved turned into capacity, on record"]],
+    [[0, "A domain owner who runs the next wave"], [2, "A pattern the next use case starts from"], [3, "A documented review and release route"]]
+  ];
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  var treeReadout = document.getElementById("treeReadout");
+  var flowTimers = [];
+  var fadeTimer = null;
+  var flowSvg = null;
+  var flowBranch = -1;
+  var flowEndsAt = 0;
+  var grownAt = 0;
+  var lastTreeInteraction = 0;
+
+  function later(ms, fn) { flowTimers.push(setTimeout(fn, ms)); }
+  function cancelFade() { clearTimeout(fadeTimer); fadeTimer = null; }
+  function scheduleFade(ms) {
+    cancelFade();
+    if (flowSvg) fadeTimer = setTimeout(fadeFlow, Math.max(flowEndsAt - Date.now(), 0) + ms);
+  }
+
+  function showReadout(branch, feeds, fboxes) {
+    if (!treeReadout) return [];
+    var hint = treeReadout.querySelector(".tree__readout-hint");
+    var body = treeReadout.querySelector(".tree__readout-body");
+    var list = treeReadout.querySelector(".tree__readout-list");
+    treeReadout.classList.remove("is-fading");
+    if (branch === null) { body.hidden = true; hint.hidden = false; return []; }
+    treeReadout.querySelector(".tree__readout-label").textContent = "Use case 0" + (branch + 1) + " feeds back \u00b7 example";
+    list.textContent = "";
+    var items = feeds.map(function (f) {
+      var li = document.createElement("li");
+      var name = document.createElement("strong");
+      name.textContent = fboxes[f.idx].textContent.trim();
+      li.appendChild(name);
+      li.appendChild(document.createTextNode(f.text));
+      list.appendChild(li);
+      return li;
+    });
+    hint.hidden = true;
+    body.hidden = false;
+    return items;
+  }
+
+  function clearFlow() {
+    flowTimers.forEach(clearTimeout);
+    flowTimers = [];
+    cancelFade();
+    if (flowSvg) {
+      flowSvg.classList.remove("is-flowing", "is-fading");
+      flowSvg.querySelectorAll(".t-flowlayer").forEach(function (n) { n.remove(); });
+      flowSvg.querySelectorAll(".is-source, .is-lit, .is-pulsing").forEach(function (n) { n.classList.remove("is-source", "is-lit", "is-pulsing"); });
+    }
+    flowSvg = null;
+    flowBranch = -1;
+  }
+
+  function fadeFlow() {
+    var svg = flowSvg;
+    if (!svg) return;
+    flowTimers.forEach(clearTimeout);
+    flowTimers = [];
+    svg.classList.add("is-fading");
+    svg.classList.remove("is-flowing");
+    svg.querySelectorAll(".is-source, .is-lit, .is-pulsing").forEach(function (n) { n.classList.remove("is-source", "is-lit", "is-pulsing"); });
+    if (treeReadout) treeReadout.classList.add("is-fading");
+    fadeTimer = setTimeout(function () { clearFlow(); showReadout(null); }, 550);
+  }
+
+  // A glowing line that runs along an existing tree path, forwards or from its end back to its start.
+  function flowLine(layer, path, reverse, delay, duration) {
+    if (!path) return;
+    ["t-flow t-flow--halo", "t-flow"].forEach(function (cls) {
+      var line = document.createElementNS(SVG_NS, "path");
+      line.setAttribute("d", path.getAttribute("d"));
+      line.setAttribute("pathLength", "1");
+      line.setAttribute("class", cls + (reverse ? " t-flow--rev" : ""));
+      line.style.animationDelay = delay + "ms";
+      line.style.animationDuration = Math.max(duration, 1) + "ms";
+      layer.appendChild(line);
+    });
+  }
+
+  function ring(layer, box, delay) {
+    var rect = box && box.querySelector("rect");
+    if (!rect) return;
+    var r = document.createElementNS(SVG_NS, "rect");
+    ["x", "y", "width", "height", "rx"].forEach(function (a) { r.setAttribute(a, rect.getAttribute(a)); });
+    r.setAttribute("class", "t-ring");
+    r.style.animationDelay = delay + "ms";
+    layer.appendChild(r);
+  }
+
+  function playFlow(svg, branch) {
+    if (!svg || !treeStage || !treeStage.classList.contains("is-grown")) return;
+    clearFlow();
+    var wait = prefersReduced ? 0 : Math.max(0, grownAt + 2900 - Date.now());
+    if (wait > 0) { later(wait, function () { playFlow(svg, branch); }); return; }
+    var k = prefersReduced ? 0 : 1;
+    var fboxes = svg.querySelectorAll(".t-fbox");
+    var source = svg.querySelectorAll(".t-ucbox")[branch];
+    var office = svg.querySelector(".t-office");
+    var cols = svg.querySelectorAll(".t-root").length;
+    var sap = svg.querySelector(".t-sap");
+    if (!source || !cols || fboxes.length < 6) return;
+    if (sap) sap.setAttribute("opacity", "0");
+    flowSvg = svg;
+    flowBranch = branch;
+
+    var layer = document.createElementNS(SVG_NS, "g");
+    layer.setAttribute("class", "t-flowlayer");
+    layer.setAttribute("aria-hidden", "true");
+    svg.insertBefore(layer, svg.querySelector(".t-ucbox"));
+    svg.classList.add("is-flowing");
+    source.classList.add("is-source");
+
+    // use case -> trunk -> Adoption Office -> fan -> each root it feeds, level by level
+    var t = 0;
+    flowLine(layer, svg.querySelectorAll(".t-branch")[branch], true, t, 650 * k); t += 650 * k;
+    flowLine(layer, svg.querySelector(".t-trunk-up"), true, t, 220 * k); t += 220 * k;
+    later(t, function () { if (office) office.classList.add("is-pulsing"); });
+    flowLine(layer, svg.querySelector(".t-trunk-down"), false, t, 260 * k); t += 260 * k;
+
+    var feeds = TREE_FEEDS[branch].map(function (f) {
+      return { idx: f[0], text: f[1], col: f[0] % cols, row: Math.floor(f[0] / cols) + 1 };
+    }).sort(function (a, b) { return a.row - b.row || a.col - b.col; });
+    var items = showReadout(branch, feeds, fboxes);
+    var end = t;
+    feeds.forEach(function (f, n) {
+      var at = t;
+      flowLine(layer, svg.querySelector('.t-root[data-col="' + f.col + '"]'), false, at, 480 * k); at += 480 * k;
+      for (var level = 1; level < f.row; level++) {
+        flowLine(layer, svg.querySelector('.t-conn[data-col="' + f.col + '"][data-level="' + level + '"]'), false, at, 260 * k);
+        at += 260 * k;
+      }
+      if (k) ring(layer, fboxes[f.idx], at);
+      later(at, function () {
+        fboxes[f.idx].classList.add("is-lit");
+        if (items[n]) items[n].classList.add("is-in");
+      });
+      end = Math.max(end, at);
+    });
+    flowEndsAt = Date.now() + end + 400;
+  }
+
+  function treeDemo() {
+    if (lastTreeInteraction || flowSvg) return;
+    var svg = visibleTreeSvg();
+    if (!svg) return;
+    playFlow(svg, 0);
+    scheduleFade(2600);
+  }
+
+  if (treeStage) {
+    var lastPointer = "mouse";
+    treeStage.addEventListener("pointerdown", function (event) { lastPointer = event.pointerType || "mouse"; }, { passive: true });
+    treeStage.querySelectorAll(".tree__svg").forEach(function (svg) {
+      svg.querySelectorAll(".t-ucbox").forEach(function (g) {
         var idx = parseInt(g.getAttribute("data-branch"), 10);
-        if (!sapBusy) pulse(idx);
-      };
-      g.addEventListener("mouseenter", trigger);
-      g.addEventListener("click", trigger);
-      g.addEventListener("keydown", function (event) {
-        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); trigger(); }
+        var show = function (restart) {
+          lastTreeInteraction = Date.now();
+          cancelFade();
+          if (!restart && flowSvg === svg && flowBranch === idx && !svg.classList.contains("is-fading")) return;
+          playFlow(svg, idx);
+        };
+        g.addEventListener("mouseenter", function () { show(false); });
+        g.addEventListener("mouseleave", function () { scheduleFade(1600); });
+        g.addEventListener("focus", function () { show(false); });
+        g.addEventListener("blur", function () { scheduleFade(800); });
+        g.addEventListener("click", function () {
+          show(false);
+          if (lastPointer !== "mouse") scheduleFade(4000);
+        });
+        g.addEventListener("keydown", function (event) {
+          if (event.key === "Enter" || event.key === " ") { event.preventDefault(); show(true); }
+        });
       });
     });
   }
