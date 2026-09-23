@@ -42,7 +42,7 @@ export function isBlockedDomain(domain: string): boolean {
   return false;
 }
 
-/** The organisation name is inferred from the domain only: the label before the public suffix, e.g. ing.com -> ing, bbc.co.uk -> bbc. */
+/** The organization name is inferred from the domain only: the label before the public suffix, e.g. ing.com -> ing, bbc.co.uk -> bbc. */
 const TWO_LEVEL_SUFFIXES = new Set(["co.uk", "org.uk", "ac.uk", "gov.uk", "me.uk", "ltd.uk", "plc.uk", "com.au", "net.au", "org.au", "edu.au", "gov.au", "co.nz", "org.nz", "govt.nz", "co.jp", "or.jp", "ne.jp", "ac.jp", "co.za", "org.za", "com.br", "org.br", "com.mx", "com.sg", "com.hk", "co.in", "co.kr", "com.tr", "com.ar", "com.cn", "com.tw", "co.il", "co.id", "com.my", "com.ph", "com.pk", "com.ng", "com.eg", "com.sa", "co.th", "com.vn", "com.ua", "com.pl", "co.at", "com.pe", "com.co", "com.ve", "com.uy", "com.ec", "com.bo", "com.py", "com.do", "com.gt", "com.sv", "com.hn", "com.ni", "com.pa", "com.pr"]);
 export function inferredCompany(domain: string): string | null {
   const labels = domain.toLowerCase().split(".").filter(Boolean);

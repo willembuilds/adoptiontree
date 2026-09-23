@@ -25,8 +25,8 @@ const FLOOR_MS = 900; // every accepted request takes at least this long, whethe
 const PROVIDER_BACKOFF_MS = 5 * 60_000; // after a failed send, every request reports the failure for this long
 const SECRET_TTL_MS = 60_000;
 const BODY_LIMIT = 8192;
-const CONSENT_VERSION = "2026-09-15";
-const CONSENT_TEXT = "I agree that The Adoption Tree™ may contact me by email regarding the whitepaper, its application within my organisation, related research and AI adoption services. I can unsubscribe at any time.";
+const CONSENT_VERSION = "2026-09-23";
+const CONSENT_TEXT = "I agree that The Adoption Tree™ may contact me by email regarding the whitepaper, its application within my organization, related research and AI adoption services. I can unsubscribe at any time.";
 const DEFAULT_ORIGINS = [
   "https://adoptiontree.ai",
   "https://www.adoptiontree.ai",

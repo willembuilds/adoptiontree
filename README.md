@@ -80,7 +80,7 @@ Retention runs in the database on a schedule (`public.whitepaper_retention()`, p
 client addresses older than an hour, active leads whose last request is older than 24 months (with their
 events), and carried-over v1 rows that never consented after 90 days are deleted; unsubscribed and
 suppressed leads older than 24 months keep only the address, status and dates, so the person is not
-contacted again. The organisation is inferred from the email domain alone (`inferred_company`); nothing is
+contacted again. The organization is inferred from the email domain alone (`inferred_company`); nothing is
 looked up elsewhere. The stored name and consent evidence belong to the first submission; a repeat request
 only counts.
 
