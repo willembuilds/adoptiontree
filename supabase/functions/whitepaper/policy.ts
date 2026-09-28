@@ -4,7 +4,9 @@
 import policy from "./email-policy.json" with { type: "json" };
 
 export const POLICY_VERSION: string = policy.version;
-const BLOCKED: Set<string> = new Set([...policy.free, ...policy.disposable].map((d) => d.toLowerCase()));
+// Consumer providers (policy.free) are allowed: senior readers often use a personal address, and the form only
+// asks for a work address, it does not insist. Disposable and relay domains stay blocked, they exist to evade.
+const BLOCKED: Set<string> = new Set([...(policy.block_free ? policy.free : []), ...policy.disposable].map((d) => d.toLowerCase()));
 
 /** Trim, strip control characters and cap the length of a user-supplied string. */
 export function clean(value: unknown, max: number): string {
@@ -33,7 +35,7 @@ export function emailDomain(email: string): string {
   return (email.split("@")[1] ?? "").toLowerCase();
 }
 
-/** Free, consumer and disposable providers are blocked, including their subdomains. */
+/** Disposable and relay providers are blocked, including their subdomains; consumer providers only when block_free is on. */
 export function isBlockedDomain(domain: string): boolean {
   const d = domain.toLowerCase();
   if (!d) return true;

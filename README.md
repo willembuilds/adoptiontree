@@ -76,6 +76,13 @@ GitHub Pages), retention and how to unsubscribe. The typefaces are served from t
 (CONSENT_TEXT, CONSENT_VERSION) and is stored with every lead. Both are written for review by privacy counsel
 and make no compliance claims.
 
+The form takes a first name, an email address and an optional organization. Consumer providers such as gmail
+or icloud are accepted: the label still asks for a work address, it does not insist. Disposable and relay
+domains stay blocked, and so does any domain that cannot receive mail. `email-policy.json` carries
+`block_free: false`; flip it to `true` to close the gate again without touching any code. Requests that never
+became a lead are counted in `whitepaper_rejections` by reason and domain only, never the address, and are
+deleted after 90 days. Read them through `whitepaper_rejections_overview`.
+
 Retention runs in the database on a schedule (`public.whitepaper_retention()`, pg_cron, hourly): hashed
 client addresses older than an hour, active leads whose last request is older than 24 months (with their
 events), and carried-over v1 rows that never consented after 90 days are deleted; unsubscribed and

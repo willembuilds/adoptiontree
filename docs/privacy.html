@@ -27,17 +27,17 @@
 <h2>What is collected, and when</h2>
 <p>When you request the white paper, the form asks for your first name and your work email address, and you tick a consent box. The site records:</p>
 <ul>
-<li>your first name, your work email address (stored in lowercase) and the domain of that address (for example <em>ing.com</em>);</li>
+<li>your first name, your email address (stored in lowercase) and the domain of that address (for example <em>ing.com</em>), plus the organization you name, if you choose to fill that in;</li>
 <li>the consent text you agreed to, its version, and the moment you agreed;</li>
 <li>how you arrived: campaign parameters in the link you clicked (utm_source and similar), the page that referred you, and the address of the page you landed on;</li>
 <li>when access was sent to you, when you opened the white paper, and how often.</li>
 </ul>
-<p>For abuse protection the site keeps a scrambled (hashed) form of your connection address for one hour; the address itself is not stored by the site. Supabase, which runs the request handler, keeps its own technical request logs (including the connection address) for a short period as part of operating the service. Nothing else is collected. The site sets no cookies and stores nothing in your browser, and uses no analytics, advertising or tracking. The campaign parameters, referring page and landing page address are read from the page you arrived on at the moment you send the form.</p>
+<p>If a request cannot be completed, for example because the address contains a typing error, we record only the reason and the domain part (<em>ing.com</em>), never the address itself, and delete that after 90 days. For abuse protection the site keeps a scrambled (hashed) form of your connection address for one hour; the address itself is not stored by the site. Supabase, which runs the request handler, keeps its own technical request logs (including the connection address) for a short period as part of operating the service. Nothing else is collected. The site sets no cookies and stores nothing in your browser, and uses no analytics, advertising or tracking. The campaign parameters, referring page and landing page address are read from the page you arrived on at the moment you send the form.</p>
 
 <h2>Why</h2>
 <ul>
 <li>To send you access to the white paper by email and to let you open it.</li>
-<li>To understand professional interest in the research: which organizations, sectors and campaigns the requests come from. The organization may be inferred from the email domain.</li>
+<li>To understand professional interest in the research: which organizations, sectors and campaigns the requests come from. The organization is the one you name, or is inferred from the email domain.</li>
 <li>Where you have agreed to it, to contact you by email about the white paper, its application within your organization, related research and AI adoption services.</li>
 </ul>
 

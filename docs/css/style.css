@@ -2248,3 +2248,7 @@ html.no-js{scroll-behavior:auto}
   .tree__readout-list li { transition: none; }
 }
 
+/* organization: one optional field under the two required ones */
+.form-field--wide { margin-top: .7rem; }
+.form-optional { color: var(--grey-2); text-transform: none; letter-spacing: 0; }
+

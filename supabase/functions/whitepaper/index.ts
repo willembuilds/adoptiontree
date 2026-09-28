@@ -136,6 +136,10 @@ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", 
 const redirect = (to: string, headers: Record<string, string>) => new Response(null, { status: 302, headers: { ...headers, Location: to } });
 /** Content-Length is required, so a body can never be streamed past the limit before it is counted. */
 const bodyLength = (req: Request): number | null => { const v = req.headers.get("content-length"); return v !== null && /^\d{1,7}$/.test(v) ? Number(v) : null; };
+/** A request that never became a lead. Domain part only, never the address: it shows typos and abuse, nothing personal. */
+async function logRejection(reason: string, domain: string | null = null) {
+  await supabase.from("whitepaper_rejections").insert({ reason, email_domain: domain });
+}
 async function logEvent(leadId: string, kind: string, attribution: Record<string, string | null> | null = null) {
   await supabase.from("whitepaper_events").insert({ lead_id: leadId, kind, ...(attribution ?? {}) });
 }
@@ -253,12 +257,15 @@ Deno.serve(async (req) => {
 
   if (body.company_website) return fail(400, "We could not process this request. Please try again.");
   const firstName = normalizeName(clean(body.first_name, 40));
-  if (!validFirstName(firstName)) return fail(400, "Please enter your first name (letters only, up to 40 characters).");
   const email = normalizeEmail(body.email);
-  if (!validEmail(email)) return fail(400, "Please enter a valid email address.");
   const domain = emailDomain(email);
-  if (isBlockedDomain(domain) || !(await domainAcceptsMail(domain))) return fail(400, "Please use your work email address to access the full whitepaper.");
-  if (!consentGiven(body.consent)) return fail(400, "Please confirm the consent box to receive the whitepaper.");
+  if (!validFirstName(firstName)) { await logRejection("invalid_name", validEmail(email) ? domain : null); return fail(400, "Please enter your first name (letters only, up to 40 characters)."); }
+  if (!validEmail(email)) { await logRejection("invalid_email"); return fail(400, "Please enter a valid email address."); }
+  // Consumer addresses are welcome. Disposable and relay domains are not, and neither is a domain that cannot receive mail.
+  if (isBlockedDomain(domain)) { await logRejection("blocked_domain", domain); return fail(400, "Please enter an email address we can send your access link to."); }
+  if (!(await domainAcceptsMail(domain))) { await logRejection("undeliverable_domain", domain); return fail(400, "Please enter an email address we can send your access link to."); }
+  if (!consentGiven(body.consent)) { await logRejection("no_consent", domain); return fail(400, "Please confirm the consent box to receive the whitepaper."); }
+  const organization = clean(body.organization, 80) || null;
   const attribution = readAttribution(body);
   const now = new Date().toISOString();
   const unavailable = "Access is temporarily unavailable. Please try again shortly.";
@@ -276,14 +283,14 @@ Deno.serve(async (req) => {
   // One row per email. The stored name and consent evidence belong to the first submission; a later request from
   // anyone who knows the address only counts as a request, keeps first-touch attribution, and never changes an
   // unsubscribed or suppressed status. Rows that never consented (carried over from v1) are completed.
-  const LEAD_COLUMNS = "id,status,first_name,inferred_company,consent_given,request_count,last_sent_at,send_count,utm_source,referrer";
+  const LEAD_COLUMNS = "id,status,first_name,inferred_company,organization,consent_given,request_count,last_sent_at,send_count,utm_source,referrer";
   const lookupLead = () => supabase.from("whitepaper_leads").select(LEAD_COLUMNS).eq("email", email).maybeSingle();
   let { data: existing, error: lookupError } = await lookupLead();
   if (lookupError) { console.error("lead lookup failed"); return fail(503, unavailable); }
   let leadId = "";
   let isNew = false;
   if (!existing) {
-    const { data: inserted, error } = await supabase.from("whitepaper_leads").insert({ email, email_domain: domain, inferred_company: inferredCompany(domain), first_name: firstName, consent_given: true, consent_version: CONSENT_VERSION, consent_text: CONSENT_TEXT, consent_at: now, source: "website", last_requested_at: now, ...attribution }).select("id").single();
+    const { data: inserted, error } = await supabase.from("whitepaper_leads").insert({ email, email_domain: domain, inferred_company: inferredCompany(domain), organization, first_name: firstName, consent_given: true, consent_version: CONSENT_VERSION, consent_text: CONSENT_TEXT, consent_at: now, source: "website", last_requested_at: now, ...attribution }).select("id").single();
     if (error?.code === "23505") {
       // A parallel request stored the address a moment ago: carry on as a repeat request, like any other.
       const again = await lookupLead();
@@ -302,6 +309,7 @@ Deno.serve(async (req) => {
     if (!existing.consent_given) Object.assign(patch, { consent_given: true, consent_version: CONSENT_VERSION, consent_text: CONSENT_TEXT, consent_at: now });
     if (!hasAttribution({ utm_source: existing.utm_source, referrer: existing.referrer })) Object.assign(patch, attribution);
     if (!existing.inferred_company) patch.inferred_company = inferredCompany(domain);
+    if (!existing.organization && organization) patch.organization = organization;
     const { error } = await supabase.from("whitepaper_leads").update(patch).eq("id", leadId);
     if (error) { console.error("lead update failed"); return fail(503, unavailable); }
   }

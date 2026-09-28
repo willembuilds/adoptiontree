@@ -1,5 +1,6 @@
 {
-  "version": "2026-09-15.2",
+  "version": "2026-09-28",
+  "block_free": false,
   "free": [
     "gmail.com", "googlemail.com", "hotmail.com", "hotmail.co.uk", "hotmail.nl", "hotmail.de", "hotmail.fr", "outlook.com", "outlook.de", "outlook.fr", "live.com",
     "live.nl", "live.co.uk", "live.de", "msn.com", "yahoo.com", "yahoo.co.uk", "yahoo.nl", "yahoo.de", "yahoo.fr", "ymail.com", "rocketmail.com", "icloud.com",

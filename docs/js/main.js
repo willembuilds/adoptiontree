@@ -556,7 +556,7 @@
   var success = document.getElementById("download-success");
   var emailInput = document.getElementById("email");
   var ATTRIBUTION_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
-  var WORK_EMAIL_MESSAGE = "Please use your work email address to access the full whitepaper.";
+  var WORK_EMAIL_MESSAGE = "Please enter an email address we can send your access link to.";
   var policyPromise = null;
 
   // Campaign source is read from the address bar of this page at load; nothing is stored in the browser.
@@ -585,7 +585,8 @@
     if (!policy) return false;
     var domain = (email.split("@")[1] || "").toLowerCase();
     if (!domain) return false;
-    return (policy.free || []).concat(policy.disposable || []).some(function (d) {
+    var list = (policy.block_free ? (policy.free || []) : []).concat(policy.disposable || []);
+    return list.some(function (d) {
       d = d.toLowerCase();
       return domain === d || domain.slice(-(d.length + 1)) === "." + d;
     });

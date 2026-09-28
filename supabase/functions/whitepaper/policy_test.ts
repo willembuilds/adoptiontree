@@ -1,12 +1,19 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import { consentGiven, emailDomain, hasAttribution, inferredCompany, isBlockedDomain, normalizeName, normalizeEmail, readAttribution, validEmail, validFirstName } from "./policy.ts";
 
-Deno.test("free and disposable providers are blocked, including subdomains", () => {
-  for (const d of ["gmail.com", "googlemail.com", "hotmail.com", "outlook.com", "live.com", "msn.com", "yahoo.com", "yahoo.co.uk", "yahoo.nl", "icloud.com", "me.com", "mac.com", "proton.me", "protonmail.com", "aol.com", "gmx.com", "gmx.de", "mail.com", "mailinator.com", "yopmail.com", "10minutemail.com"]) {
+Deno.test("disposable and relay providers are blocked, including subdomains", () => {
+  for (const d of ["mailinator.com", "yopmail.com", "10minutemail.com", "temp-mail.org", "guerrillamail.com", "duck.com", "mozmail.com", "simplelogin.com", "addy.io", "privaterelay.appleid.com", "tempmail.lol"]) {
     assert(isBlockedDomain(d), d + " should be blocked");
     assert(isBlockedDomain(d.toUpperCase()), d + " should be blocked case-insensitively");
     assert(isBlockedDomain("mail." + d), "subdomain of " + d + " should be blocked");
   }
+});
+
+Deno.test("consumer addresses are welcome, and so is any normal company domain", () => {
+  for (const d of ["gmail.com", "hotmail.com", "outlook.com", "icloud.com", "me.com", "proton.me", "ziggo.nl", "ing.com", "philips.nl", "bbc.co.uk"]) {
+    assertEquals(isBlockedDomain(d), false, d + " should be allowed");
+  }
+  assertEquals(isBlockedDomain(""), true, "an empty domain is never valid");
 });
 
 Deno.test("work domains pass", () => {
