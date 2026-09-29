@@ -123,3 +123,12 @@ regulated enterprises. The model is identified as a design proposal awaiting fie
 
 The Node server that previously handled requests is kept on the branch `node-server-2026-09-14` of the
 private repository willembuilds/the-adoption-house-website.
+
+## Access links
+
+The emailed link is `https://adoptiontree.ai/paper/?k=<12 character code>`. The code lives in
+`whitepaper_access_codes` (7 days, revocable via `whitepaper_revoke_code`), not inside the link, so the URL
+stays short and carries the site's own domain instead of a raw `*.supabase.co` address with a signed blob.
+`docs/paper/index.html` exchanges the code for a 10 minute signed Storage URL through `/access?k=...&format=json`
+and sends the reader straight to the PDF; it holds no secret and no file of its own. Links already sitting in
+someone's inbox keep working: `/access?token=...` still accepts the legacy signed token.

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your white paper · The Adoption Tree™ Model</title>
+<meta name="description" content="Open your copy of The Adoption Tree™ Model white paper.">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0C0D12">
+<link rel="stylesheet" href="../css/fonts.css">
+<link rel="stylesheet" href="../css/style.css?v=tree5"><link rel="icon" href="../favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="nav" id="nav">
+<a class="nav__brand" href="../index.html" aria-label="Adoption Tree™ Model home"><span class="nav__mark"></span><span class="nav__name">Adoption Tree™<span class="nav__model"> / Model</span></span></a>
+<nav class="nav__links" aria-label="Main navigation"><a href="../index.html#tree">The model</a><a href="../index.html#whitepaper">White paper</a></nav>
+<a class="btn btn--solid nav__cta" href="../index.html#whitepaper">Get the whitepaper <span aria-hidden="true">↗</span></a>
+</header>
+<main id="main">
+<section class="section" style="padding-top:8rem">
+<div class="legal">
+<div class="section__head"><span class="label">White paper</span></div>
+
+<div id="state-opening">
+<h2 class="section__title" style="margin-bottom:1rem">Opening your white paper</h2>
+<p class="lead">The Adoption Tree™ Model, version 1.0. Forty-three pages, including the five working tools.</p>
+<p class="source-note">This takes a moment. If nothing happens, use the button below.</p>
+<p style="margin-top:1.6rem"><a class="btn btn--orange" id="open-button" href="#">Open the PDF <span aria-hidden="true">→</span></a></p>
+</div>
+
+<div id="state-expired" hidden>
+<h2 class="section__title" style="margin-bottom:1rem">This link has expired</h2>
+<p class="lead">An access link works for seven days. Request a new one and it arrives in your inbox straight away.</p>
+<p style="margin-top:1.6rem"><a class="btn btn--orange" href="../index.html#whitepaper">Request a new link <span aria-hidden="true">→</span></a></p>
+<p class="source-note" style="margin-top:2rem">Rather have it sent by hand? Write to <a href="mailto:willem@adoptiontree.ai">willem@adoptiontree.ai</a>.</p>
+</div>
+
+<div id="state-unavailable" hidden>
+<h2 class="section__title" style="margin-bottom:1rem">Temporarily unavailable</h2>
+<p class="lead">Your link is fine, but the paper cannot be handed over right now. Please try again in a few minutes.</p>
+<p style="margin-top:1.6rem"><a class="btn btn--orange" href="" id="retry-button">Try again <span aria-hidden="true">→</span></a></p>
+<p class="source-note" style="margin-top:2rem">Still stuck? Write to <a href="mailto:willem@adoptiontree.ai">willem@adoptiontree.ai</a>.</p>
+</div>
+
+<noscript>
+<p class="lead" style="margin-top:1.5rem">This page needs JavaScript to hand you the paper. Write to <a href="mailto:willem@adoptiontree.ai">willem@adoptiontree.ai</a> and it will be sent to you directly.</p>
+</noscript>
+</div>
+</section>
+</main>
+<script>
+(function () {
+  var ENDPOINT = "https://khvblzrzvqdkjxckedbm.supabase.co/functions/v1/whitepaper/access";
+  var code = (new URLSearchParams(location.search).get("k") || "").trim().toLowerCase();
+  var opening = document.getElementById("state-opening");
+  var button = document.getElementById("open-button");
+  document.getElementById("retry-button").href = location.href;
+
+  function show(id) { opening.hidden = true; document.getElementById(id).hidden = false; }
+
+  // A code is spent for a signed address that lives ten minutes. The paper itself never passes through this page.
+  if (!/^[a-z2-9]{12}$/.test(code)) { show("state-expired"); return; }
+  fetch(ENDPOINT + "?k=" + encodeURIComponent(code) + "&format=json", { headers: { Accept: "application/json" } })
+    .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+    .then(function (res) {
+      if (!res.ok || !res.body || !res.body.url) { show(res.body && res.body.error === "unavailable" ? "state-unavailable" : "state-expired"); return; }
+      button.href = res.body.url;
+      location.href = res.body.url;
+    })
+    .catch(function () { show("state-unavailable"); });
+})();
+</script>
+<footer class="site-footer">
+<div><a class="nav__brand" href="../index.html"><span class="nav__mark"></span><span class="nav__name">Adoption Tree™ / Model</span></a><p>© 2026 Willem Knaap. All rights reserved.</p></div>
+<div><p>Version 1.0 · An operating model for enterprise AI adoption.</p><p><a href="../index.html">Back to the site</a></p></div>
+</footer>
+</body></html>

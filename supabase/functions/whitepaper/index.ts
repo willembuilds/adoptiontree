@@ -1,6 +1,7 @@
 // White paper funnel for the Adoption Tree™ Model site.
 //   POST /            request access: first name, work email, consent. Stores the lead, emails a personal link.
-//   GET  /access      redeems an emailed link (7 days) for a short signed Storage URL and redirects to the PDF.
+//   GET  /access      redeems a short access code (?k=, 7 days) or a legacy signed token for a short-lived signed
+//                     Storage URL. Answers JSON to the reader page on adoptiontree.ai, and redirects otherwise.
 //   GET  /unsubscribe sends the reader to the confirmation page on the site; POST (from that page, or RFC 8058
 //                     one-click from a mail client) marks the address unsubscribed.
 //   GET  /policy      the email deny list, so the browser validates against the same file as the server.
@@ -14,6 +15,11 @@ const BUCKET = "whitepaper";
 const OBJECT = "The_Adoption_Tree_Model_White_Paper_v1.0.pdf";
 const STORAGE_LINK_SECONDS = 600;
 const ACCESS_LINK_MS = 7 * 86_400_000;
+// 32 unambiguous characters, no l/o/0/1, so a code survives being read aloud or copied by hand.
+// 12 characters is 2^60 combinations, and the per-client rate limit below makes guessing pointless.
+const CODE_ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789";
+const CODE_LENGTH = 12;
+const CODE_PATTERN = /^[a-z2-9]{12}$/;
 const UNSUB_LINK_MS = 730 * 86_400_000; // as long as the record itself is kept
 const RESEND_COOLDOWN_MS = 60_000;
 const WINDOW_MS = 15 * 60_000;
@@ -78,6 +84,25 @@ async function makeToken(kind: "access" | "unsub", leadId: string, ttlMs: number
   const payload = b64u(enc.encode(JSON.stringify({ t: kind, l: leadId, e: Date.now() + ttlMs, n: b64u(crypto.getRandomValues(new Uint8Array(9))) })));
   const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, enc.encode(payload)));
   return payload + "." + b64u(sig);
+}
+/** 256 divides evenly by the 32 character alphabet, so masking the byte introduces no bias. */
+function makeAccessCode(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(CODE_LENGTH));
+  let out = "";
+  for (const b of bytes) out += CODE_ALPHABET[b & 31];
+  return out;
+}
+/** Stores a fresh code for this lead, retrying only on the (vanishingly unlikely) collision. */
+async function issueAccessCode(leadId: string): Promise<string | null> {
+  const expiresAt = new Date(Date.now() + ACCESS_LINK_MS).toISOString();
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const code = makeAccessCode();
+    const { error } = await supabase.from("whitepaper_access_codes").insert({ code, lead_id: leadId, expires_at: expiresAt });
+    if (!error) return code;
+    if (error.code !== "23505") { console.error("access code insert failed"); return null; }
+  }
+  console.error("access code collided three times");
+  return null;
 }
 async function readToken(token: string | null, kind: "access" | "unsub"): Promise<string | null> {
   if (!token || token.length > 600 || !/^[\w-]+\.[\w-]+$/.test(token)) return null;
@@ -185,16 +210,45 @@ Deno.serve(async (req) => {
   }
 
   if (route === "/access" && req.method === "GET") {
-    if (!(await hmacKey("access"))) { console.error("signing secret is not available"); return redirect(`${SITE_URL}/?access=unavailable#whitepaper`, headers); }
-    const leadId = await readToken(url.searchParams.get("token"), "access");
-    if (!leadId) return redirect(`${SITE_URL}/?access=expired#whitepaper`, headers);
+    // Two ways in. A short code (?k=) from the reader page on the site, which is what emails carry now, and a
+    // legacy signed token from links already in someone's inbox. The reader page asks for JSON; anything else
+    // (a pasted address, a mail client that follows the plain link) is answered with a redirect, as before.
+    const asJson = url.searchParams.get("format") === "json";
+    const code = (url.searchParams.get("k") ?? "").trim().toLowerCase();
+    const deny = (state: "expired" | "unavailable") =>
+      asJson
+        ? new Response(JSON.stringify({ error: state }), { status: state === "expired" ? 410 : 503, headers: { ...headers, "Content-Type": "application/json; charset=utf-8" } })
+        : redirect(`${SITE_URL}/?access=${state}#whitepaper`, headers);
+
+    let leadId: string | null = null;
+    if (code) {
+      // Guessing is bounded here, not just by the size of the code space. Only failed lookups cost budget, so
+      // someone rereading their own paper is never locked out while someone trying codes is.
+      const hash = await clientHash(req);
+      const { count: tried } = await supabase.from("whitepaper_attempts").select("*", { count: "exact", head: true }).eq("ip_hash", hash).gte("attempted_at", new Date(Date.now() - WINDOW_MS).toISOString());
+      if ((tried ?? 0) > MAX_ATTEMPTS) return deny("expired");
+      if (CODE_PATTERN.test(code)) {
+        const { data: row } = await supabase.from("whitepaper_access_codes").select("code,lead_id,expires_at,revoked_at,used_count").eq("code", code).maybeSingle();
+        if (row && !row.revoked_at && new Date(row.expires_at) > new Date()) {
+          leadId = row.lead_id;
+          await supabase.from("whitepaper_access_codes").update({ used_count: (row.used_count ?? 0) + 1, last_used_at: new Date().toISOString() }).eq("code", code);
+        }
+      }
+      if (!leadId) { await supabase.from("whitepaper_attempts").insert({ ip_hash: hash }); return deny("expired"); }
+    } else {
+      if (!(await hmacKey("access"))) { console.error("signing secret is not available"); return deny("unavailable"); }
+      leadId = await readToken(url.searchParams.get("token"), "access");
+      if (!leadId) return deny("expired");
+    }
+
     const { data: lead } = await supabase.from("whitepaper_leads").select("id,status,accessed_at,download_count").eq("id", leadId).maybeSingle();
-    if (!lead || lead.status === "suppressed") return redirect(`${SITE_URL}/?access=expired#whitepaper`, headers);
+    if (!lead || lead.status === "suppressed") return deny("expired");
     const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(OBJECT, STORAGE_LINK_SECONDS);
-    if (error || !data?.signedUrl) { console.error("signed link could not be created"); return redirect(`${SITE_URL}/?access=unavailable#whitepaper`, headers); }
+    if (error || !data?.signedUrl) { console.error("signed link could not be created"); return deny("unavailable"); }
     const now = new Date().toISOString();
     await supabase.from("whitepaper_leads").update({ accessed_at: lead.accessed_at ?? now, last_accessed_at: now, download_count: (lead.download_count ?? 0) + 1, updated_at: now }).eq("id", leadId);
     await logEvent(leadId, "accessed");
+    if (asJson) return new Response(JSON.stringify({ url: data.signedUrl }), { status: 200, headers: { ...headers, "Content-Type": "application/json; charset=utf-8" } });
     return redirect(data.signedUrl, headers);
   }
 
@@ -335,11 +389,11 @@ Deno.serve(async (req) => {
   if (isNew || send) await logEvent(leadId, "requested", attribution);
   if (send) {
     const release = () => supabase.from("whitepaper_leads").update({ last_sent_at: lastSentAt }).eq("id", leadId).eq("last_sent_at", now);
-    const accessToken = await makeToken("access", leadId, ACCESS_LINK_MS);
+    const accessCode = await issueAccessCode(leadId);
     const unsubToken = await makeToken("unsub", leadId, UNSUB_LINK_MS);
-    if (!accessToken || !unsubToken) { await release(); console.error("signing secret is not available"); return fail(503, unavailable); }
+    if (!accessCode || !unsubToken) { await release(); console.error("access link could not be prepared"); return fail(503, unavailable); }
     const base = `${Deno.env.get("SUPABASE_URL") ?? ""}/functions/v1/whitepaper`;
-    const sent = await sendAccessEmail({ email, first_name: firstName }, `${base}/access?token=${accessToken}`, `${SITE_URL}/unsubscribe.html?token=${unsubToken}`, `${base}/unsubscribe?token=${unsubToken}`);
+    const sent = await sendAccessEmail({ email, first_name: firstName }, `${SITE_URL}/paper/?k=${accessCode}`, `${SITE_URL}/unsubscribe.html?token=${unsubToken}`, `${base}/unsubscribe?token=${unsubToken}`);
     await logEvent(leadId, sent ? "email_sent" : "email_failed");
     if (!sent) { await release(); return fail(503, "We could not send your access email right now. Please try again in a few minutes."); }
     await supabase.from("whitepaper_leads").update({ send_count: sendCount + 1, updated_at: now }).eq("id", leadId);
