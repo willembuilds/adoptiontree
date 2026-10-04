@@ -671,8 +671,10 @@
   var explainer = document.getElementById("explainerVideo");
   var explainerPlay = document.getElementById("explainerPlay");
   if (explainer && explainerPlay) {
-    explainer.controls = false;
-    explainerPlay.hidden = false;
+    if (explainer.paused && explainer.currentTime === 0) {
+      explainer.controls = false;
+      explainerPlay.hidden = false;
+    }
     var handOver = function () {
       explainerPlay.hidden = true;
       explainer.controls = true;
