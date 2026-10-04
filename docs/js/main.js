@@ -667,6 +667,25 @@
     });
   }
 
+  /* ---------- explainer video: the whole frame is the play target until first play, then native controls ---------- */
+  var explainer = document.getElementById("explainerVideo");
+  var explainerPlay = document.getElementById("explainerPlay");
+  if (explainer && explainerPlay) {
+    explainer.controls = false;
+    explainerPlay.hidden = false;
+    var handOver = function () {
+      explainerPlay.hidden = true;
+      explainer.controls = true;
+    };
+    explainer.addEventListener("play", handOver);
+    explainerPlay.addEventListener("click", function () {
+      handOver();
+      var started = explainer.play();
+      if (started && started.catch) started.catch(function () {});
+      explainer.focus({ preventScroll: true });
+    });
+  }
+
   /* ---------- active nav link ---------- */
   var sections = document.querySelectorAll("section[id]");
   var navAnchors = document.querySelectorAll(".nav__links a");

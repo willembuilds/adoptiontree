@@ -9,6 +9,11 @@ The original ink, bone and orange design and the animated tree are retained.
   favicon.svg, CNAME). Hosted on GitHub Pages from `docs/` on the main branch of a public repository at
   https://adoptiontree.ai; only that folder is published, never the function source or this file. Every push deploys.
   No build step, no dependencies.
+- **Explainer video:** `docs/assets/video/` holds the 96 second explainer (H.264 and AAC, 1080p, 7.7 MB, moov
+  atom first so it streams), its poster and WebVTT captions. It is self-hosted on purpose: no third-party player,
+  so the privacy promise of no cookies and no tracking holds. `#explainer` in index.html shows one play target
+  over the poster until first play, then hands over to the browser's own controls; without JavaScript the native
+  controls are there from the start. To replace the film, overwrite the three files and keep the names.
 - **White paper requests:** supabase/functions/whitepaper, a Supabase Edge Function with four routes. The form
   posts first name, work email and consent; the function validates (syntax, a free and disposable provider deny
   list, a DNS check that the domain can receive mail, explicit consent), stores the lead, and emails a personal
