@@ -2256,8 +2256,8 @@ html.no-js{scroll-behavior:auto}
 .section--video { padding-top: clamp(3.5rem, 7vw, 6rem); padding-bottom: clamp(3.5rem, 7vw, 6rem); }
 .section--video .section__head { justify-content: space-between; flex-wrap: wrap; gap: .6rem 1.4rem; margin-bottom: clamp(1.1rem, 2.2vw, 1.6rem); }
 /* the cap leaves room for the nav and the label; on a short screen (a phone on its side, a zoomed laptop) it gives way to a floor that only clears the nav */
-.section--video .section__head, .video { width: 100%; max-width: max(calc((100vh - 14.5rem) * 16 / 9), min(30rem, calc((100vh - 4rem) * 16 / 9))); margin-left: auto; margin-right: auto; }
-@supports (height: 100svh) { .section--video .section__head, .video { max-width: max(calc((100svh - 14.5rem) * 16 / 9), min(30rem, calc((100svh - 4rem) * 16 / 9))); } }
+.section--video .section__head, .video, .video__sources { width: 100%; max-width: max(calc((100vh - 14.5rem) * 16 / 9), min(30rem, calc((100vh - 4rem) * 16 / 9))); margin-left: auto; margin-right: auto; }
+@supports (height: 100svh) { .section--video .section__head, .video, .video__sources { max-width: max(calc((100svh - 14.5rem) * 16 / 9), min(30rem, calc((100svh - 4rem) * 16 / 9))); } }
 .video { position: relative; }
 .video video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: var(--ink); border: 1px solid var(--line-strong); border-radius: 2px; }
 .video video::cue { font-family: var(--font-sans); color: var(--bone); background: rgba(12, 13, 18, .82); }
@@ -2266,8 +2266,12 @@ html.no-js{scroll-behavior:auto}
 .video__play-icon { display: inline-block; width: .7em; height: .84em; vertical-align: -.06em; }
 .video__play:hover .btn--orange { background: var(--bone); border-color: var(--bone); }
 .video__play:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+/* sources for the figures quoted in the film: outside .video, so the play overlay never covers the links */
+.video__sources { margin-top: .9rem; font-size: .8rem; line-height: 1.55; color: var(--grey-2); }
+.video__sources a { color: inherit; text-decoration: underline; text-underline-offset: .18em; }
+.video__sources a:hover, .video__sources a:focus-visible { color: var(--bone); }
 @media (max-width: 640px) {
-  .section--video .section__head, .video { max-width: none; }
+  .section--video .section__head, .video, .video__sources { max-width: none; }
 }
 /* in a small frame the poster's own title fills it, so the pill shrinks to a round play mark in the corner */
 @media (max-width: 640px), (max-height: 560px) {
