@@ -550,7 +550,7 @@
     });
   });
 
-  /* White paper funnel: attribution capture, work-email policy, consent, emailed access. */
+  /* Whitepaper funnel: attribution capture, work-email policy, consent, emailed access. */
   var form = document.getElementById("whitepaperForm");
   var status = document.getElementById("form-status");
   var success = document.getElementById("download-success");

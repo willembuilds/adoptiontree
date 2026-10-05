@@ -1,6 +1,6 @@
 # Adoption Tree Model website
 
-A landing page based on Willem Knaap's white paper, version 1.1 of October 2026 (build 2026-10-04; first
+A landing page based on Willem Knaap's whitepaper, version 1.1 of October 2026 (build 2026-10-04; first
 published September 2026 as version 1.0).
 The original ink, bone and orange design and the animated tree are retained.
 
@@ -10,14 +10,14 @@ The original ink, bone and orange design and the animated tree are retained.
   favicon.svg, CNAME). Hosted on GitHub Pages from `docs/` on the main branch of a public repository at
   https://adoptiontree.ai; only that folder is served on adoptiontree.ai. The repository itself is public, so the function source and this file can be read on GitHub. Every push deploys.
   No build step, no dependencies.
-- **Explainer video:** `docs/assets/video/` holds the 102 second explainer (H.264 and AAC, 1080p, 8.3 MB, moov
+- **Explainer video:** `docs/assets/video/` holds the 102 second explainer (H.264 and AAC, 1080p, 14 MB, moov
   atom first so it streams), its poster and WebVTT captions. It is self-hosted on purpose: no third-party player,
   so the privacy promise of no cookies and no tracking holds. `#explainer` in index.html shows one play target
   over the poster until first play, then hands over to the browser's own controls; without JavaScript the native
   controls are there from the start. To replace the film, overwrite the three files and keep the names.
   The line under the frame links the two sources of the figures spoken in the film; when the film's figures
-  change, that line and the white paper change with it, since the paper is the reference for both.
-- **White paper requests:** supabase/functions/whitepaper, a Supabase Edge Function with four routes. The form
+  change, that line and the whitepaper change with it, since the paper is the reference for both.
+- **Whitepaper requests:** supabase/functions/whitepaper, a Supabase Edge Function with four routes. The form
   posts first name, work email and consent; the function validates (syntax, a disposable and relay provider deny
   list, a DNS check that the domain can receive mail, explicit consent), stores the lead, and emails a personal
   access link valid for 7 days. Opening that link redeems a 10-minute signed Storage URL and redirects to the PDF.
@@ -48,7 +48,7 @@ Open http://127.0.0.1:4173. The form posts to the live Supabase function, which 
    which invalidates every outstanding access link within a minute (the function caches the key for 60
    seconds). Unsubscribe links are signed with `whitepaper_unsub_secret`; do not rotate that one, or the
    unsubscribe links in every delivered email stop working.
-3. Upload the PDF to bucket `whitepaper` as `The_Adoption_Tree_Model_White_Paper_v1.1.pdf` (the object name is
+3. Upload the PDF to bucket `whitepaper` as `The_Adoption_Tree_Model_Whitepaper_v1.1.pdf` (the object name is
    the `OBJECT` constant in the function; a new version means a new object, a new constant and a redeploy, and
    the previous object is renamed `ARCHIVED-<build date>-...`). With the CLI:
    `supabase storage cp <file> ss:///whitepaper/<name> --content-type application/pdf --experimental --project-ref <ref>`. The PDF itself is not part of this repository.
