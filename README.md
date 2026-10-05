@@ -1,6 +1,6 @@
 # Adoption Tree Model website
 
-A landing page based on Willem Knaap's whitepaper, version 1.1 of October 2026 (build 2026-10-04; first
+A landing page based on Willem Knaap's whitepaper, version 1.1 of October 2026 (build 2026-10-05; first
 published September 2026 as version 1.0).
 The original ink, bone and orange design and the animated tree are retained.
 
