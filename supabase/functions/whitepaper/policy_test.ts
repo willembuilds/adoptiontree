@@ -71,3 +71,12 @@ Deno.test("names typed on phones are normalised before validation", () => {
   assertEquals(normalizeName("Zo\u00EB\u200B"), "Zo\u00EB");
   for (const ok of ["O\u2019Neill", "D\u2019Souza", "Mar\u00EDa\u00A0Jos\u00E9", "Jean\u2011Luc"]) assert(validFirstName(normalizeName(ok)), ok);
 });
+
+Deno.test("a name can carry initials and titles, never something shaped like an address", () => {
+  for (const ok of ["Jan", "Mary-Jane", "D'Arcy", "J.P.", "Jr.", "J. P. Morgan", "Dr. Anna", "José María", "李 明"]) {
+    assert(validFirstName(ok), ok + " should be accepted");
+  }
+  for (const bad of ["evil.com", "bit.ly", "Jan.Peter", "Visit www.evil-site.com today", "Claim.prize.at bit.ly now", "www.example.org"]) {
+    assertEquals(validFirstName(bad), false, bad + " should be refused");
+  }
+});

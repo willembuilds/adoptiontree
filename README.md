@@ -6,9 +6,9 @@ The original ink, bone and orange design and the animated tree are retained.
 
 ## How it is built
 
-- **Site:** plain static files in `docs/` (index.html, privacy.html, unsubscribe.html, css/, js/, assets/,
+- **Site:** plain static files in `docs/` (index.html, privacy.html, unsubscribe.html, paper/, css/, js/, assets/,
   favicon.svg, CNAME). Hosted on GitHub Pages from `docs/` on the main branch of a public repository at
-  https://adoptiontree.ai; only that folder is published, never the function source or this file. Every push deploys.
+  https://adoptiontree.ai; only that folder is served on adoptiontree.ai. The repository itself is public, so the function source and this file can be read on GitHub. Every push deploys.
   No build step, no dependencies.
 - **Explainer video:** `docs/assets/video/` holds the 102 second explainer (H.264 and AAC, 1080p, 8.3 MB, moov
   atom first so it streams), its poster and WebVTT captions. It is self-hosted on purpose: no third-party player,
@@ -18,7 +18,7 @@ The original ink, bone and orange design and the animated tree are retained.
   The line under the frame links the two sources of the figures spoken in the film; when the film's figures
   change, that line and the white paper change with it, since the paper is the reference for both.
 - **White paper requests:** supabase/functions/whitepaper, a Supabase Edge Function with four routes. The form
-  posts first name, work email and consent; the function validates (syntax, a free and disposable provider deny
+  posts first name, work email and consent; the function validates (syntax, a disposable and relay provider deny
   list, a DNS check that the domain can receive mail, explicit consent), stores the lead, and emails a personal
   access link valid for 7 days. Opening that link redeems a 10-minute signed Storage URL and redirects to the PDF.
   Every email carries an unsubscribe link that opens a confirmation page (mail clients can also use one-click). `GET /policy` serves the deny list so the browser
@@ -57,7 +57,7 @@ Open http://127.0.0.1:4173. The form posts to the live Supabase function, which 
    `ALLOWED_ORIGINS` secret overrides them without a redeploy.
 5. Email delivery uses Resend. In the Supabase dashboard, Edge Functions, Secrets, add `RESEND_API_KEY`; in
    Resend, verify the sending domain adoptiontree.ai (it gives DNS records to add at the registrar). Optional
-   secrets: `EMAIL_FROM` (default `The Adoption Tree <willem@adoptiontree.ai>`), `EMAIL_REPLY_TO`, `SITE_URL`.
+   secrets: `EMAIL_FROM` (default `The Adoption Tree™ <willem@adoptiontree.ai>`), `EMAIL_REPLY_TO`, `SITE_URL`.
    Until the key is set, requests are stored but the form reports that the email could not be sent.
 
 ## Reading the requests
@@ -76,7 +76,7 @@ Live checks with curl (the response never reveals whether an address is already 
       -H 'Content-Type: application/json' -H 'Accept: application/json' -H 'Origin: https://adoptiontree.ai' \
       -d '{"first_name":"Jan","email":"jan@YOUR-OWN-DOMAIN","consent":true}'
 
-A free-mail or disposable address returns 400 with the work-email message; a valid request returns
+A disposable or relay address returns 400 with "Please enter an email address we can send your access link to."; a valid request returns
 `{"ok":true}` once the email provider is configured. Remove test rows from `whitepaper_leads` afterwards.
 
 ## Privacy
@@ -117,17 +117,17 @@ Note for the owner: access and unsubscribe links carry their token in the URL, s
 
 ### Points for legal review
 
-Not legal advice; these are the open items counsel should confirm before launch.
+Not legal advice. The site is live; these items are still open for counsel to confirm.
 
 - Legal basis and wording of the consent text for B2B marketing contact (consent is recorded at submission;
   the address is only proven when the emailed link is opened, see `accessed_at`).
-- Resend (US) receives first name and email address for every access email; Resend's data processing agreement is part of its terms, and the EU-US Data Privacy Framework is the transfer basis. Confirm, or move the sending domain to Resend's EU region.
-- Retention periods (24 months for leads, 90 days for v1 rows, 1 hour for hashed addresses).
+- Resend receives first name and email address for every access email (the sending domain is in its eu-west-1 region; the company is US-based); Resend's data processing agreement is part of its terms, and the EU-US Data Privacy Framework is the transfer basis. Confirm, or move the sending domain to Resend's EU region.
+- Retention periods (24 months for leads, 90 days for v1 rows and for refused requests, up to 2 hours for hashed addresses, 30 days after expiry for access codes).
 
 ## Content decisions
 
 The landing page highlights the premise, six foundation blocks, six gates, transfer test, measurement
-and five working tools, with blurred thumbnails of the five tool sheets that show their shape but not their content. It does not present survey percentages as independent claims.
+and five working tools, with blurred thumbnails of the five tool sheets that show their shape but not their content. The only survey percentages on the page are in the explainer film, each shown with its source and linked under the frame.
 The 24-week reference is explicitly working time, with 9 to 12 months elapsed as a planning assumption in
 regulated enterprises. The model is identified as a design proposal awaiting field evaluation.
 

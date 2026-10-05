@@ -59,9 +59,11 @@ export function normalizeName(name: string): string {
   return name.replace(/[\u2018\u2019\u02BC\u05F3]/g, "'").replace(/[\u00A0\u2000-\u200A\u202F\u3000]/g, " ").replace(/[\u2010-\u2014\u2212]/g, "-").replace(/[\u200B-\u200D\u2060\uFEFF\u00AD]/g, "").replace(/\s+/g, " ").trim();
 }
 
-/** A name: one to three words of letters in any script (with apostrophes, dots and hyphens), each up to 24 characters. Digits, symbols and links are refused, since the name is echoed in the email greeting. */
+/** A name: one to three words of letters in any script (with apostrophes and hyphens), each up to 24 characters. A dot is allowed only after an initial or at the end of a word (J.P., Jr.), never inside one, so nothing shaped like a domain passes: the name is echoed in the email greeting, and mail clients turn a bare address into a link. */
+const NAME_WORD = String.raw`(?:(?:\p{L}\.){1,4}|\p{L}[\p{L}\p{M}'-]{0,23}\.?)`;
+const NAME_PATTERN = new RegExp(`^${NAME_WORD}(?: ${NAME_WORD}){0,2}$`, "u");
 export function validFirstName(name: string): boolean {
-  return /^\p{L}[\p{L}\p{M}'.-]{0,23}( \p{L}[\p{L}\p{M}'.-]{0,23}){0,2}$/u.test(name);
+  return NAME_PATTERN.test(name);
 }
 
 /** The consent box arrives as true (JSON), "on" (native form) or "true"/"1" (either). */
