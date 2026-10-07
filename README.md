@@ -66,6 +66,16 @@ Supabase dashboard, Table editor, view `whitepaper_leads_overview`: first name, 
 version and time, source and campaign, request and send counts, whether and when the paper was opened. Export CSV
 from there. `whitepaper_events` answers which post or campaign produced a given request.
 
+## Daily digest to the owner
+
+Every morning at 06:00 UTC (08:00 Amsterdam in summer, 07:00 in winter) the database job `whitepaper_daily_digest`
+(pg_cron) calls `POST /digest` on the function through pg_net, with a bearer token that lives in Vault as
+`whitepaper_digest_secret`. The function emails `DIGEST_TO` (default willem@adoptiontree.ai, a function secret
+overrides it) what moved in the last 24 hours (requests, downloads, unsubscribes, per person) followed by the full
+requester list. Nothing moved, no email. To send one by hand, in the SQL editor:
+`select public.whitepaper_digest_call(720, true);` (the last 30 days, sent even if nothing moved). The HTTP answer
+lands in `net._http_response`. Same data, any time: the view `whitepaper_leads_overview` in the dashboard.
+
 ## Checks
 
     cd supabase/functions/whitepaper && deno test policy_test.ts && deno check index.ts && deno lint

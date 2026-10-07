@@ -5,6 +5,8 @@
 //   GET  /unsubscribe sends the reader to the confirmation page on the site; POST (from that page, or RFC 8058
 //                     one-click from a mail client) marks the address unsubscribed.
 //   GET  /policy      the email deny list, so the browser validates against the same file as the server.
+//   POST /digest      emails the owner what happened in the last N hours plus the full requester list. Called by
+//                     the database's daily cron job (pg_net) with the whitepaper_digest_secret as bearer token.
 // Deployed with JWT verification off: the browser form carries no token. Secrets come from function
 // secrets (Deno.env) or, as a fallback, from Vault through the whitepaper_secret() function.
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -43,6 +45,8 @@ const DEFAULT_ORIGINS = [
 const SITE_URL = (Deno.env.get("SITE_URL") ?? "https://adoptiontree.ai").replace(/\/$/, "");
 const EMAIL_FROM = Deno.env.get("EMAIL_FROM") ?? "The Adoption Tree™ <willem@adoptiontree.ai>";
 const EMAIL_REPLY_TO = Deno.env.get("EMAIL_REPLY_TO") ?? "willem@adoptiontree.ai";
+const DIGEST_TO = Deno.env.get("DIGEST_TO") ?? "willem@adoptiontree.ai";
+const DIGEST_ZONE = "Europe/Amsterdam";
 
 function serviceKey(): string {
   const bundle = Deno.env.get("SUPABASE_SECRET_KEYS");
@@ -197,6 +201,52 @@ async function sendAccessEmail(lead: { email: string; first_name: string }, acce
   } catch { console.error("email send failed"); providerDownUntil = Date.now() + PROVIDER_BACKOFF_MS; return false; }
 }
 
+// ---------- owner digest ----------
+const stamp = (iso: string | null) => iso ? new Date(iso).toLocaleString("en-GB", { timeZone: DIGEST_ZONE, day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).replace(",", " ·") : "";
+const sameSecret = (a: string, b: string) => { if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; };
+type Lead = { id: string; first_name: string; email: string; organization: string | null; inferred_company: string | null; status: string; created_at: string; download_count: number; last_accessed_at: string | null; last_requested_at: string | null };
+/** One email: what moved in the window, then every requester. Returns null when nothing moved and force is off. */
+async function buildDigest(hours: number, force: boolean): Promise<{ subject: string; text: string; html: string; requests: number; downloads: number } | null> {
+  const since = new Date(Date.now() - hours * 3_600_000).toISOString();
+  const { data: events } = await supabase.from("whitepaper_events").select("lead_id,kind,created_at").gte("created_at", since).in("kind", ["requested", "accessed", "unsubscribed"]).order("created_at", { ascending: false }).limit(2000);
+  const { data: leads } = await supabase.from("whitepaper_leads").select("id,first_name,email,organization,inferred_company,status,created_at,download_count,last_accessed_at,last_requested_at").order("last_requested_at", { ascending: false }).limit(500);
+  const all = (leads ?? []) as Lead[];
+  const byId = new Map(all.map((l) => [l.id, l]));
+  const moved = new Map<string, { requests: number; downloads: number; unsubscribed: boolean; last: string }>();
+  for (const e of events ?? []) {
+    const m = moved.get(e.lead_id) ?? { requests: 0, downloads: 0, unsubscribed: false, last: e.created_at };
+    if (e.kind === "requested") m.requests++; else if (e.kind === "accessed") m.downloads++; else m.unsubscribed = true;
+    moved.set(e.lead_id, m);
+  }
+  const requests = [...moved.values()].reduce((n, m) => n + m.requests, 0);
+  const downloads = [...moved.values()].reduce((n, m) => n + m.downloads, 0);
+  if (!moved.size && !force) return null;
+  const org = (l: Lead) => l.organization ?? l.inferred_company ?? "";
+  const who = (l: Lead) => `${l.first_name || "(no name)"} · ${l.email}${org(l) ? " · " + org(l) : ""}`;
+  const windowLabel = hours === 24 ? "the last 24 hours" : `the last ${hours} hours`;
+  const today = new Date().toLocaleDateString("en-GB", { timeZone: DIGEST_ZONE, weekday: "short", day: "2-digit", month: "short" });
+  const subject = `Whitepaper · ${requests} request${requests === 1 ? "" : "s"}, ${downloads} download${downloads === 1 ? "" : "s"} · ${today}`;
+  const movedLines: string[] = [];
+  for (const [id, m] of moved) {
+    const l = byId.get(id); if (!l) continue;
+    const bits = [m.requests ? `${m.requests} request${m.requests === 1 ? "" : "s"}` : "", m.downloads ? `${m.downloads} download${m.downloads === 1 ? "" : "s"}` : "", m.unsubscribed ? "unsubscribed" : ""].filter(Boolean).join(", ");
+    movedLines.push(`${who(l)} · ${bits} · ${stamp(m.last)}`);
+  }
+  const text = [
+    `What moved in ${windowLabel}`, ...(movedLines.length ? movedLines : ["Nothing."]), "",
+    `All requesters (${all.length})`,
+    ...all.map((l) => `${who(l)} · requested ${stamp(l.created_at)} · ${l.download_count} download${l.download_count === 1 ? "" : "s"}${l.last_accessed_at ? ", last " + stamp(l.last_accessed_at) : ""}${l.status !== "active" ? " · " + l.status : ""}`),
+    "", `Full detail: Supabase dashboard, view whitepaper_leads_overview.`,
+  ].join("\n");
+  const cell = (v: string, extra = "") => `<td style="padding:6px 10px;border-bottom:1px solid #D8D2C4;font-size:13px;vertical-align:top;${extra}">${escapeHtml(v)}</td>`;
+  const row = (l: Lead, bits: string) => `<tr>${cell(l.first_name || "(no name)")}${cell(l.email)}${cell(org(l))}${cell(bits, "white-space:nowrap")}</tr>`;
+  const head = `<tr><th style="text-align:left;padding:6px 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7A7A82">Name</th><th style="text-align:left;padding:6px 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7A7A82">Email</th><th style="text-align:left;padding:6px 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7A7A82">Organization</th><th style="text-align:left;padding:6px 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7A7A82">Activity</th></tr>`;
+  const movedRows = [...moved].map(([id, m]) => { const l = byId.get(id); if (!l) return ""; const bits = [m.requests ? `${m.requests} request${m.requests === 1 ? "" : "s"}` : "", m.downloads ? `${m.downloads} download${m.downloads === 1 ? "" : "s"}` : "", m.unsubscribed ? "unsubscribed" : ""].filter(Boolean).join(", "); return row(l, `${bits} · ${stamp(m.last)}`); }).join("");
+  const allRows = all.map((l) => row(l, `requested ${stamp(l.created_at)} · ${l.download_count} download${l.download_count === 1 ? "" : "s"}${l.last_accessed_at ? ", last " + stamp(l.last_accessed_at) : ""}${l.status !== "active" ? " · " + l.status : ""}`)).join("");
+  const html = `<!DOCTYPE html><html lang="en"><body style="margin:0;background:#F4F2ED;font-family:Archivo,Helvetica,Arial,sans-serif;color:#0C0D12"><div style="max-width:760px;margin:0 auto;padding:32px 20px"><p style="font-family:'IBM Plex Mono',Menlo,monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#FF5C1F;margin:0 0 18px">The Adoption Tree™ · whitepaper digest</p><h2 style="font-size:17px;margin:0 0 10px">What moved in ${escapeHtml(windowLabel)}</h2>${movedRows ? `<table style="border-collapse:collapse;width:100%">${head}${movedRows}</table>` : `<p style="font-size:14px;margin:0 0 10px">Nothing.</p>`}<h2 style="font-size:17px;margin:28px 0 10px">All requesters (${all.length})</h2><table style="border-collapse:collapse;width:100%">${head}${allRows}</table><p style="font-size:12px;line-height:1.6;color:#66666E;border-top:1px solid #D8D2C4;padding-top:14px;margin:28px 0 0">Sent every morning when something moved. Full detail: Supabase dashboard, view whitepaper_leads_overview.</p></div></body></html>`;
+  return { subject, text, html, requests, downloads };
+}
+
 // ---------- handler ----------
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
@@ -275,6 +325,25 @@ Deno.serve(async (req) => {
     await logEvent(leadId, "unsubscribed");
     if (fromPage) return redirect(`${SITE_URL}/?unsubscribed=1#whitepaper`, headers);
     return plain(200, "Unsubscribed");
+  }
+
+  if (route === "/digest" && req.method === "POST") {
+    const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { ...headers, "Content-Type": "application/json; charset=utf-8" } });
+    const expected = await secret("whitepaper_digest_secret");
+    const given = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+    if (!expected || !sameSecret(given, expected)) return json(401, { error: "unauthorized" });
+    const len = bodyLength(req);
+    let opts: Record<string, unknown> = {};
+    try { opts = len !== null && len > 0 && len <= 512 ? await req.json() : {}; } catch { opts = {}; }
+    const hours = Math.min(720, Math.max(1, Number(opts.hours) || 24));
+    const force = opts.force === true;
+    const digest = await buildDigest(hours, force);
+    if (!digest) return json(200, { sent: false, reason: "nothing moved", hours });
+    const apiKey = await secret("RESEND_API_KEY");
+    if (!apiKey) return json(503, { error: "email provider is not configured" });
+    const res = await postToProvider(apiKey, { from: EMAIL_FROM, to: [DIGEST_TO], reply_to: EMAIL_REPLY_TO, subject: digest.subject, text: digest.text, html: digest.html });
+    if (!res.ok) { console.error("digest send failed with status " + res.status); return json(502, { error: "send failed", status: res.status }); }
+    return json(200, { sent: true, to: DIGEST_TO, hours, requests: digest.requests, downloads: digest.downloads });
   }
 
   const wantsJson = (req.headers.get("accept") ?? "").includes("application/json");
