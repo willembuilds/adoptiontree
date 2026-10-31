@@ -10,7 +10,7 @@ The original ink, bone and orange design and the animated tree are retained.
   favicon.svg, CNAME). Hosted on GitHub Pages from `docs/` on the main branch of a public repository at
   https://adoptiontree.ai; only that folder is served on adoptiontree.ai. The repository itself is public, so the function source and this file can be read on GitHub. Every push deploys.
   No build step, no dependencies.
-- **Explainer video:** `docs/assets/video/` holds the 102 second explainer (H.264 and AAC, 1080p, 14 MB, moov
+- **Explainer video:** `docs/assets/video/` holds the 102 second explainer (H.264 and AAC, 1080p, about 8 MB, moov
   atom first so it streams), its poster and WebVTT captions. It is self-hosted on purpose: no third-party player,
   so the privacy promise of no cookies and no tracking holds. `#explainer` in index.html shows one play target
   over the poster until first play, then hands over to the browser's own controls; without JavaScript the native
@@ -48,7 +48,7 @@ Open http://127.0.0.1:4173. The form posts to the live Supabase function, which 
    which invalidates every outstanding access link within a minute (the function caches the key for 60
    seconds). Unsubscribe links are signed with `whitepaper_unsub_secret`; do not rotate that one, or the
    unsubscribe links in every delivered email stop working.
-3. Upload the PDF to bucket `whitepaper` as `The_Adoption_Tree_Model_Whitepaper_v1.1.pdf` (the object name is
+3. Upload the PDF to bucket `whitepaper` as `The_Adoption_Tree_Model_Whitepaper_v1.1_Registered.pdf` (the object name is
    the `OBJECT` constant in the function; a new version means a new object, a new constant and a redeploy, and
    the previous object is renamed `ARCHIVED-<build date>-...`). With the CLI:
    `supabase storage cp <file> ss:///whitepaper/<name> --content-type application/pdf --experimental --project-ref <ref>`. The PDF itself is not part of this repository.
@@ -57,7 +57,7 @@ Open http://127.0.0.1:4173. The form posts to the live Supabase function, which 
    `ALLOWED_ORIGINS` secret overrides them without a redeploy.
 5. Email delivery uses Resend. In the Supabase dashboard, Edge Functions, Secrets, add `RESEND_API_KEY`; in
    Resend, verify the sending domain adoptiontree.ai (it gives DNS records to add at the registrar). Optional
-   secrets: `EMAIL_FROM` (default `The Adoption Tree™ <willem@adoptiontree.ai>`), `EMAIL_REPLY_TO`, `SITE_URL`.
+   secrets: `EMAIL_FROM` (default `The Adoption Tree® <willem@adoptiontree.ai>`), `EMAIL_REPLY_TO`, `SITE_URL`.
    Until the key is set, requests are stored but the form reports that the email could not be sent.
 
 ## Reading the requests
@@ -152,3 +152,18 @@ stays short and carries the site's own domain instead of a raw `*.supabase.co` a
 `docs/paper/index.html` exchanges the code for a 10 minute signed Storage URL through `/access?k=...&format=json`
 and sends the reader straight to the PDF; it holds no secret and no file of its own. Links already sitting in
 someone's inbox keep working: `/access?token=...` still accepts the legacy signed token.
+
+## Registered-mark update, 31 October 2026
+
+The live website and request-email templates use Adoption Tree® throughout. The
+private download object is `The_Adoption_Tree_Model_Whitepaper_v1.1_Registered.pdf`
+(43 pages; SHA-256 `4cd5599dfa8392f0af3fbcbbc0baa03680bb9b7c7ac958fb5c36528ba2981b88`).
+The supplied PDF is unchanged; it contains 82 registered marks and no trademark marks
+in extracted text. The preceding object remains private as a rollback copy. Existing
+access codes keep using the current object after function deployment. Cover/preview
+assets are rendered from the supplied PDF. Consent wording changes only the brand
+symbol; new consent records use version `2026-10-31`, historical records are retained.
+The explainer opening/closing title cards and its extracted poster also use the
+registered mark. AAC audio is copied without re-encoding (packet SHA-256
+`e97cacec21958f5b4cdbc9f1857b6fafdfbb72a8266d5e516f2d0f7e3845964a`).
+Changed visual asset URLs carry `?v=20261031` so cached previews refresh.

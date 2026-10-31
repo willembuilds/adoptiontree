@@ -1,4 +1,4 @@
-// Whitepaper funnel for the Adoption Tree™ Model site.
+// Whitepaper funnel for the Adoption Tree® Model site.
 //   POST /            request access: first name, work email, consent. Stores the lead, emails a personal link.
 //   GET  /access      redeems a short access code (?k=, 7 days) or a legacy signed token for a short-lived signed
 //                     Storage URL. Answers JSON to the reader page on adoptiontree.ai, and redirects otherwise.
@@ -14,7 +14,7 @@ import policy from "./email-policy.json" with { type: "json" };
 import { clean, consentGiven, emailDomain, hasAttribution, inferredCompany, isBlockedDomain, normalizeEmail, normalizeName, POLICY_VERSION, readAttribution, validEmail, validFirstName } from "./policy.ts";
 
 const BUCKET = "whitepaper";
-const OBJECT = "The_Adoption_Tree_Model_Whitepaper_v1.1.pdf";
+const OBJECT = "The_Adoption_Tree_Model_Whitepaper_v1.1_Registered.pdf";
 const STORAGE_LINK_SECONDS = 600;
 const ACCESS_LINK_MS = 7 * 86_400_000;
 // 32 unambiguous characters, no l/o/0/1, so a code survives being read aloud or copied by hand.
@@ -33,8 +33,8 @@ const FLOOR_MS = 900; // every accepted request takes at least this long, whethe
 const PROVIDER_BACKOFF_MS = 5 * 60_000; // after a failed send, every request reports the failure for this long
 const SECRET_TTL_MS = 60_000;
 const BODY_LIMIT = 8192;
-const CONSENT_VERSION = "2026-09-23";
-const CONSENT_TEXT = "I agree that The Adoption Tree™ may contact me by email regarding the whitepaper, its application within my organization, related research and AI adoption services. I can unsubscribe at any time.";
+const CONSENT_VERSION = "2026-10-31";
+const CONSENT_TEXT = "I agree that The Adoption Tree® may contact me by email regarding the whitepaper, its application within my organization, related research and AI adoption services. I can unsubscribe at any time.";
 const DEFAULT_ORIGINS = [
   "https://adoptiontree.ai",
   "https://www.adoptiontree.ai",
@@ -43,7 +43,7 @@ const DEFAULT_ORIGINS = [
   "http://localhost:4173",
 ];
 const SITE_URL = (Deno.env.get("SITE_URL") ?? "https://adoptiontree.ai").replace(/\/$/, "");
-const EMAIL_FROM = Deno.env.get("EMAIL_FROM") ?? "The Adoption Tree™ <willem@adoptiontree.ai>";
+const EMAIL_FROM = Deno.env.get("EMAIL_FROM") ?? "The Adoption Tree® <willem@adoptiontree.ai>";
 const EMAIL_REPLY_TO = Deno.env.get("EMAIL_REPLY_TO") ?? "willem@adoptiontree.ai";
 const DIGEST_TO = Deno.env.get("DIGEST_TO") ?? "willem@adoptiontree.ai";
 const DIGEST_ZONE = "Europe/Amsterdam";
@@ -190,9 +190,9 @@ async function sendAccessEmail(lead: { email: string; first_name: string }, acce
   const apiKey = await secret("RESEND_API_KEY");
   if (!apiKey) { console.error("email provider is not configured"); return false; }
   const name = lead.first_name || "there";
-  const subject = "Your access to The Adoption Tree™ whitepaper";
-  const text = `Hi ${name},\n\nHere is your personal access to The Adoption Tree™ whitepaper, version 1.1 (43 pages):\n\n${accessUrl}\n\nThe link is valid for 7 days and opens the PDF directly.\n\nWillem Knaap\nThe Adoption Tree™ · ${SITE_URL}\n\nYou receive this email because you requested the whitepaper on ${SITE_URL.replace(/^https?:\/\//, "")} and agreed to be contacted about it. Unsubscribe from further contact: ${unsubUrl}\n`;
-  const html = `<!DOCTYPE html><html lang="en"><body style="margin:0;background:#F4F2ED;font-family:Archivo,Helvetica,Arial,sans-serif;color:#0C0D12"><div style="max-width:560px;margin:0 auto;padding:40px 24px"><p style="font-family:'IBM Plex Mono',Menlo,monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#FF5C1F;margin:0 0 20px">The Adoption Tree™ · whitepaper</p><p style="font-size:17px;line-height:1.6;margin:0 0 16px">Hi ${escapeHtml(name)},</p><p style="font-size:17px;line-height:1.6;margin:0 0 24px">Here is your personal access to <strong>The Adoption Tree™ whitepaper</strong>, version 1.1, 43 pages including the five working tools.</p><p style="margin:0 0 28px"><a href="${accessUrl}" style="display:inline-block;background:#FF5C1F;color:#0C0D12;font-family:'IBM Plex Mono',Menlo,monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;padding:14px 22px;border-radius:999px">Open the whitepaper</a></p><p style="font-size:14px;line-height:1.6;color:#4A4A52;margin:0 0 24px">The link is valid for 7 days and opens the PDF directly. If the button does not work, copy this address into your browser:<br><span style="word-break:break-all">${accessUrl}</span></p><p style="font-size:15px;line-height:1.6;margin:0 0 32px">Willem Knaap<br><a href="${SITE_URL}" style="color:#0C0D12">${SITE_URL.replace(/^https?:\/\//, "")}</a></p><p style="font-size:12px;line-height:1.6;color:#66666E;border-top:1px solid #D8D2C4;padding-top:16px;margin:0">You receive this email because you requested the whitepaper on ${SITE_URL.replace(/^https?:\/\//, "")} and agreed to be contacted about it. <a href="${unsubUrl}" style="color:#66666E">Unsubscribe from further contact</a>.</p></div></body></html>`;
+  const subject = "Your access to The Adoption Tree® whitepaper";
+  const text = `Hi ${name},\n\nHere is your personal access to The Adoption Tree® whitepaper, version 1.1 (43 pages):\n\n${accessUrl}\n\nThe link is valid for 7 days and opens the PDF directly.\n\nWillem Knaap\nThe Adoption Tree® · ${SITE_URL}\n\nYou receive this email because you requested the whitepaper on ${SITE_URL.replace(/^https?:\/\//, "")} and agreed to be contacted about it. Unsubscribe from further contact: ${unsubUrl}\n`;
+  const html = `<!DOCTYPE html><html lang="en"><body style="margin:0;background:#F4F2ED;font-family:Archivo,Helvetica,Arial,sans-serif;color:#0C0D12"><div style="max-width:560px;margin:0 auto;padding:40px 24px"><p style="font-family:'IBM Plex Mono',Menlo,monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#FF5C1F;margin:0 0 20px">The Adoption Tree® · whitepaper</p><p style="font-size:17px;line-height:1.6;margin:0 0 16px">Hi ${escapeHtml(name)},</p><p style="font-size:17px;line-height:1.6;margin:0 0 24px">Here is your personal access to <strong>The Adoption Tree® whitepaper</strong>, version 1.1, 43 pages including the five working tools.</p><p style="margin:0 0 28px"><a href="${accessUrl}" style="display:inline-block;background:#FF5C1F;color:#0C0D12;font-family:'IBM Plex Mono',Menlo,monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;padding:14px 22px;border-radius:999px">Open the whitepaper</a></p><p style="font-size:14px;line-height:1.6;color:#4A4A52;margin:0 0 24px">The link is valid for 7 days and opens the PDF directly. If the button does not work, copy this address into your browser:<br><span style="word-break:break-all">${accessUrl}</span></p><p style="font-size:15px;line-height:1.6;margin:0 0 32px">Willem Knaap<br><a href="${SITE_URL}" style="color:#0C0D12">${SITE_URL.replace(/^https?:\/\//, "")}</a></p><p style="font-size:12px;line-height:1.6;color:#66666E;border-top:1px solid #D8D2C4;padding-top:16px;margin:0">You receive this email because you requested the whitepaper on ${SITE_URL.replace(/^https?:\/\//, "")} and agreed to be contacted about it. <a href="${unsubUrl}" style="color:#66666E">Unsubscribe from further contact</a>.</p></div></body></html>`;
   try {
     const res = await postToProvider(apiKey, { from: EMAIL_FROM, to: [lead.email], reply_to: EMAIL_REPLY_TO, subject, text, html, headers: { "List-Unsubscribe": `<${oneClickUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } });
     if (!res.ok) { console.error("email send failed with status " + res.status); providerDownUntil = Date.now() + PROVIDER_BACKOFF_MS; return false; }
@@ -243,7 +243,7 @@ async function buildDigest(hours: number, force: boolean): Promise<{ subject: st
   const head = `<tr><th style="text-align:left;padding:6px 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7A7A82">Name</th><th style="text-align:left;padding:6px 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7A7A82">Email</th><th style="text-align:left;padding:6px 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7A7A82">Organization</th><th style="text-align:left;padding:6px 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7A7A82">Activity</th></tr>`;
   const movedRows = [...moved].map(([id, m]) => { const l = byId.get(id); if (!l) return ""; const bits = [m.requests ? `${m.requests} request${m.requests === 1 ? "" : "s"}` : "", m.downloads ? `${m.downloads} download${m.downloads === 1 ? "" : "s"}` : "", m.unsubscribed ? "unsubscribed" : ""].filter(Boolean).join(", "); return row(l, `${bits} · ${stamp(m.last)}`); }).join("");
   const allRows = all.map((l) => row(l, `requested ${stamp(l.created_at)} · ${l.download_count} download${l.download_count === 1 ? "" : "s"}${l.last_accessed_at ? ", last " + stamp(l.last_accessed_at) : ""}${l.status !== "active" ? " · " + l.status : ""}`)).join("");
-  const html = `<!DOCTYPE html><html lang="en"><body style="margin:0;background:#F4F2ED;font-family:Archivo,Helvetica,Arial,sans-serif;color:#0C0D12"><div style="max-width:760px;margin:0 auto;padding:32px 20px"><p style="font-family:'IBM Plex Mono',Menlo,monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#FF5C1F;margin:0 0 18px">The Adoption Tree™ · whitepaper digest</p><h2 style="font-size:17px;margin:0 0 10px">What moved in ${escapeHtml(windowLabel)}</h2>${movedRows ? `<table style="border-collapse:collapse;width:100%">${head}${movedRows}</table>` : `<p style="font-size:14px;margin:0 0 10px">Nothing.</p>`}<h2 style="font-size:17px;margin:28px 0 10px">All requesters (${all.length})</h2><table style="border-collapse:collapse;width:100%">${head}${allRows}</table><p style="font-size:12px;line-height:1.6;color:#66666E;border-top:1px solid #D8D2C4;padding-top:14px;margin:28px 0 0">Sent every morning when something moved. Full detail: Supabase dashboard, view whitepaper_leads_overview.</p></div></body></html>`;
+  const html = `<!DOCTYPE html><html lang="en"><body style="margin:0;background:#F4F2ED;font-family:Archivo,Helvetica,Arial,sans-serif;color:#0C0D12"><div style="max-width:760px;margin:0 auto;padding:32px 20px"><p style="font-family:'IBM Plex Mono',Menlo,monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#FF5C1F;margin:0 0 18px">The Adoption Tree® · whitepaper digest</p><h2 style="font-size:17px;margin:0 0 10px">What moved in ${escapeHtml(windowLabel)}</h2>${movedRows ? `<table style="border-collapse:collapse;width:100%">${head}${movedRows}</table>` : `<p style="font-size:14px;margin:0 0 10px">Nothing.</p>`}<h2 style="font-size:17px;margin:28px 0 10px">All requesters (${all.length})</h2><table style="border-collapse:collapse;width:100%">${head}${allRows}</table><p style="font-size:12px;line-height:1.6;color:#66666E;border-top:1px solid #D8D2C4;padding-top:14px;margin:28px 0 0">Sent every morning when something moved. Full detail: Supabase dashboard, view whitepaper_leads_overview.</p></div></body></html>`;
   return { subject, text, html, requests, downloads };
 }
 
