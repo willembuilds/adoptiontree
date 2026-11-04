@@ -527,28 +527,85 @@
     }
   });
 
-  /* Decision gates: click, arrow keys, Home and End. */
-  var tabs = Array.from(document.querySelectorAll('[role="tab"]'));
-  function selectGate(tab) {
-    tabs.forEach(function (item) {
-      var selected = item === tab;
-      item.classList.toggle("is-selected", selected);
-      item.setAttribute("aria-selected", String(selected));
-      item.tabIndex = selected ? 0 : -1;
-      document.getElementById(item.getAttribute("aria-controls")).hidden = !selected;
-    });
+  /* ---------- explorers: the reference wave (section 03) and the handover (section 04) ----------
+     Tabs follow the ARIA tabs pattern: click, arrow keys, Home and End. The panel buttons step through in order. */
+  function bringIntoView(root, panel) {
+    var bar = root.querySelector('[role="tablist"]');
+    var stuck = bar && getComputedStyle(bar).position === "sticky";
+    var target = stuck ? panel : root;
+    var offset = (nav ? nav.getBoundingClientRect().height : 0) + (stuck ? bar.getBoundingClientRect().height : 0) + 12;
+    var top = target.getBoundingClientRect().top;
+    if (top < offset || top > window.innerHeight * 0.55) {
+      window.scrollTo({ top: window.scrollY + top - offset, behavior: prefersReduced ? "auto" : "smooth" });
+    }
   }
-  tabs.forEach(function (tab, index) {
-    tab.addEventListener("click", function () { selectGate(tab); });
-    tab.addEventListener("keydown", function (event) {
-      var next;
-      if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
-      if (event.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
-      if (event.key === "Home") next = 0;
-      if (event.key === "End") next = tabs.length - 1;
-      if (next !== undefined) { event.preventDefault(); selectGate(tabs[next]); tabs[next].focus(); }
+  function initTabs(root, onChange, viewSelector) {
+    var tabs = Array.from(root.querySelectorAll('[role="tablist"] [role="tab"]'));
+    function select(index, focus) {
+      tabs.forEach(function (tab, n) {
+        var on = n === index;
+        tab.classList.toggle("is-selected", on);
+        tab.setAttribute("aria-selected", String(on));
+        tab.tabIndex = on ? 0 : -1;
+        var panel = document.getElementById(tab.getAttribute("aria-controls"));
+        if (panel) { panel.hidden = !on; panel.classList.toggle("is-active", on); }
+      });
+      if (onChange) onChange(index, tabs);
+      if (focus) tabs[index].focus({ preventScroll: true });
+    }
+    tabs.forEach(function (tab, index) {
+      tab.addEventListener("click", function () { select(index); });
+      tab.addEventListener("keydown", function (event) {
+        var next;
+        if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
+        if (event.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === "Home") next = 0;
+        if (event.key === "End") next = tabs.length - 1;
+        if (next !== undefined) { event.preventDefault(); select(next, true); }
+      });
     });
-  });
+    root.querySelectorAll("button[data-go]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var index = parseInt(button.getAttribute("data-go"), 10);
+        select(index, true);
+        var view = viewSelector ? root.querySelector(viewSelector) : null;
+        bringIntoView(root, view || document.getElementById(tabs[index].getAttribute("aria-controls")));
+      });
+    });
+    return select;
+  }
+
+  var wave = document.getElementById("waveExplorer");
+  if (wave) {
+    var waveGates = wave.querySelectorAll(".wr-gate");
+    initTabs(wave, function (index) {
+      wave.setAttribute("data-step", String(index));
+      waveGates.forEach(function (gate) {
+        var at = parseInt(gate.getAttribute("data-step"), 10);
+        gate.classList.toggle("is-passed", at < index);
+        gate.classList.toggle("is-current", at === index);
+      });
+    });
+    // the one orchestrated moment: the wave draws itself the first time it is seen
+    if (prefersReduced || !("IntersectionObserver" in window)) {
+      wave.classList.add("is-played");
+    } else {
+      var wio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) { wave.classList.add("is-played"); wio.disconnect(); }
+        });
+      }, { threshold: 0.3 });
+      wio.observe(wave);
+    }
+  }
+
+  var handover = document.getElementById("handover");
+  if (handover) {
+    initTabs(handover, function (index, tabs) {
+      handover.setAttribute("data-stage", String(index));
+      tabs.forEach(function (tab, n) { tab.classList.toggle("is-done", n < index); });
+    }, ".handover__body");
+  }
 
   /* Whitepaper funnel: attribution capture, work-email policy, consent, emailed access. */
   var form = document.getElementById("whitepaperForm");
@@ -689,7 +746,7 @@
   }
 
   /* ---------- active nav link ---------- */
-  var sections = document.querySelectorAll("section[id]");
+  var sections = document.querySelectorAll("main > section[id]");
   var navAnchors = document.querySelectorAll(".nav__links a");
   if ("IntersectionObserver" in window) {
     var sio = new IntersectionObserver(
