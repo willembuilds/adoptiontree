@@ -10,13 +10,22 @@ The original ink, bone and orange design and the animated tree are retained.
   favicon.svg, CNAME). Hosted on GitHub Pages from `docs/` on the main branch of a public repository at
   https://adoptiontree.ai; only that folder is served on adoptiontree.ai. The repository itself is public, so the function source and this file can be read on GitHub. Every push deploys.
   No build step, no dependencies.
-- **Explainer video:** `docs/assets/video/` holds the 102 second explainer (H.264 and AAC, 1080p, about 8 MB, moov
-  atom first so it streams), its poster and WebVTT captions. It is self-hosted on purpose: no third-party player,
-  so the privacy promise of no cookies and no tracking holds. `#explainer` in index.html shows one play target
-  over the poster until first play, then hands over to the browser's own controls; without JavaScript the native
-  controls are there from the start. To replace the film, overwrite the three files and keep the names.
-  The line under the frame links the two sources of the figures spoken in the film; when the film's figures
-  change, that line and the whitepaper change with it, since the paper is the reference for both.
+- **Explainer video:** `docs/assets/video/` holds the 87 second explainer (1080p30 H.264 at about 730 kbps, AAC mono,
+  about 9 MB, moov atom first so it streams), its poster and WebVTT captions (22 cues). Version 2 of 4 November 2026
+  keeps the original narration voice: the four survey-figure sentences (37%, 6%, BCG's two figures) were cut from the
+  opening at the pauses between sentences, the lead-in silence was shortened so the first word comes at 1.05 s (the first sentence is the 4 October recording, so "of organizations" is spoken again after the 5 October cut), and
+  nothing else in the voice track changed. The pictures were re-rendered from the site's own design system (Archivo,
+  IBM Plex Mono, the tree of section 02, the wave ruler of 03, the handover strip of 04), one scene per section, and
+  scene 05 ends on the portfolio effect: wave 1, 2 and 3 as shortening bars (faster, more reliable, lower cost per
+  wave, a design expectation per whitepaper p. 11) under the line "Project by project, the organization transforms."
+  Copy rule for the film: every sentence on screen is a sentence the voice says, shown when it is spoken; everything
+  else is a label or a figure. It is self-hosted on purpose: no third-party player, so the privacy promise of no
+  cookies and no tracking holds. `#explainer` in index.html shows one play target over the poster until first play,
+  then hands over to the browser's own controls; without JavaScript the native controls are there from the start.
+  To replace the film, overwrite the three files, keep the names and bump the `?v=` keys. To rebuild it, see
+  `tools/explainer/README.md`: every frame is a deterministic function of time in `film.html`, rendered with headless
+  Chrome and encoded with AVFoundation; no ffmpeg needed. The line under the frame links the source of the one figure
+  spoken in the film; when the film's figures change, that line and the whitepaper change with it.
 - **Whitepaper requests:** supabase/functions/whitepaper, a Supabase Edge Function with four routes. The form
   posts first name, work email and consent; the function validates (syntax, a disposable and relay provider deny
   list, a DNS check that the domain can receive mail, explicit consent), stores the lead, and emails a personal
@@ -163,7 +172,7 @@ in extracted text. The preceding object remains private as a rollback copy. Exis
 access codes keep using the current object after function deployment. Cover/preview
 assets are rendered from the supplied PDF. Consent wording changes only the brand
 symbol; new consent records use version `2026-10-31`, historical records are retained.
-The explainer opening/closing title cards and its extracted poster also use the
-registered mark. AAC audio is copied without re-encoding (packet SHA-256
-`e97cacec21958f5b4cdbc9f1857b6fafdfbb72a8266d5e516f2d0f7e3845964a`).
+The explainer's closing title card and its poster use the registered mark. Since the
+4 November 2026 re-cut, the narration is re-encoded (AAC mono) from the 31 October
+track with the four figure sentences removed; the voice itself is unchanged.
 Changed visual asset URLs carry `?v=20261031` so cached previews refresh.

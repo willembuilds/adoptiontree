@@ -1,0 +1,222 @@
+{
+ "offset": 12.286,
+ "head": 2.215,
+ "total": 87.18,
+ "cues": [
+  {
+   "s": 1.005,
+   "e": 5.91,
+   "lines": [
+    "McKinsey finds that 89 percent",
+    "of organizations now use AI."
+   ],
+   "text": "McKinsey finds that 89 percent of organizations now use AI.",
+   "i": 0
+  },
+  {
+   "s": 6.289,
+   "e": 10.339,
+   "lines": [
+    "Using AI has become common.",
+    "Repeating it has not."
+   ],
+   "text": "Using AI has become common. Repeating it has not.",
+   "i": 5
+  },
+  {
+   "s": 10.765,
+   "e": 14.495,
+   "lines": [
+    "The Adoption Tree Model is an",
+    "operating model for that gap."
+   ],
+   "text": "The Adoption Tree Model is an operating model for that gap.",
+   "i": 6
+  },
+  {
+   "s": 14.535,
+   "e": 20.046,
+   "lines": [
+    "It takes an organization from one working",
+    "AI use case to the ability to repeat it."
+   ],
+   "text": "It takes an organization from one working AI use case to the ability to repeat it.",
+   "i": 7
+  },
+  {
+   "s": 20.465,
+   "e": 21.707,
+   "lines": [
+    "Read it as a tree."
+   ],
+   "text": "Read it as a tree.",
+   "i": 8
+  },
+  {
+   "s": 21.747,
+   "e": 25.024,
+   "lines": [
+    "The branches are the use",
+    "cases people see and use."
+   ],
+   "text": "The branches are the use cases people see and use.",
+   "i": 9
+  },
+  {
+   "s": 25.064,
+   "e": 29.063,
+   "lines": [
+    "The roots are six blocks of",
+    "capability the organization keeps."
+   ],
+   "text": "The roots are six blocks of capability the organization keeps.",
+   "i": 10
+  },
+  {
+   "s": 29.103,
+   "e": 32.252,
+   "lines": [
+    "And the trunk is the Adoption Office: a small,"
+   ],
+   "text": "And the trunk is the Adoption Office: a small,",
+   "i": 11
+  },
+  {
+   "s": 32.292,
+   "e": 35.204,
+   "lines": [
+    "jointly staffed team, temporary by design."
+   ],
+   "text": "jointly staffed team, temporary by design.",
+   "i": 12
+  },
+  {
+   "s": 35.631,
+   "e": 40.266,
+   "lines": [
+    "The office takes each use case through",
+    "six gates, from mandate to transfer."
+   ],
+   "text": "The office takes each use case through six gates, from mandate to transfer.",
+   "i": 13
+  },
+  {
+   "s": 40.306,
+   "e": 44.493,
+   "lines": [
+    "Each gate is a decision with a",
+    "named owner and minimum evidence."
+   ],
+   "text": "Each gate is a decision with a named owner and minimum evidence.",
+   "i": 14
+  },
+  {
+   "s": 44.533,
+   "e": 48.125,
+   "lines": [
+    "A reference wave takes",
+    "twenty-four weeks of working time."
+   ],
+   "text": "A reference wave takes twenty-four weeks of working time.",
+   "i": 15
+  },
+  {
+   "s": 48.165,
+   "e": 52.114,
+   "lines": [
+    "In a regulated enterprise, plan",
+    "nine to twelve months elapsed."
+   ],
+   "text": "In a regulated enterprise, plan nine to twelve months elapsed.",
+   "i": 16
+  },
+  {
+   "s": 52.531,
+   "e": 55.588,
+   "lines": [
+    "What sets the model apart",
+    "happens after go-live."
+   ],
+   "text": "What sets the model apart happens after go-live.",
+   "i": 17
+  },
+  {
+   "s": 55.628,
+   "e": 58.588,
+   "lines": [
+    "Every live use case leaves something behind:"
+   ],
+   "text": "Every live use case leaves something behind:",
+   "i": 18
+  },
+  {
+   "s": 58.628,
+   "e": 61.899,
+   "lines": [
+    "approved data, a tested",
+    "control, trained people."
+   ],
+   "text": "approved data, a tested control, trained people.",
+   "i": 19
+  },
+  {
+   "s": 61.939,
+   "e": 66.166,
+   "lines": [
+    "That flows back into the roots, so the",
+    "next use case starts further ahead."
+   ],
+   "text": "That flows back into the roots, so the next use case starts further ahead.",
+   "i": 20
+  },
+  {
+   "s": 66.206,
+   "e": 71.355,
+   "lines": [
+    "The foundation enables the use case. The",
+    "use case makes the foundation stronger."
+   ],
+   "text": "The foundation enables the use case. The use case makes the foundation stronger.",
+   "i": 21
+  },
+  {
+   "s": 71.395,
+   "e": 75.829,
+   "lines": [
+    "And the office is built to leave:",
+    "dependency is designed to decline,"
+   ],
+   "text": "And the office is built to leave: dependency is designed to decline,",
+   "i": 22
+  },
+  {
+   "s": 75.869,
+   "e": 78.106,
+   "lines": [
+    "and trained Adoption Coaches stay."
+   ],
+   "text": "and trained Adoption Coaches stay.",
+   "i": 23
+  },
+  {
+   "s": 78.565,
+   "e": 82.544,
+   "lines": [
+    "The Adoption Tree Model. Build",
+    "AI capability that stays."
+   ],
+   "text": "The Adoption Tree Model. Build AI capability that stays.",
+   "i": 24
+  },
+  {
+   "s": 82.584,
+   "e": 85.578,
+   "lines": [
+    "Get the whitepaper at adoptiontree.ai."
+   ],
+   "text": "Get the whitepaper at adoptiontree.ai.",
+   "i": 25
+  }
+ ],
+ "restored": "sentence 1 taken from the 4 Oct 2026 track (commit 70948a2) so 'of organizations' is spoken again; first word at 1.05 s"
+}
